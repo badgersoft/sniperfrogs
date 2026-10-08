@@ -24,11 +24,9 @@ const TIME_BONUS_PER_SECOND := 500
 const BUNNY_SHOT_INTERVAL := Vector2(10.0, 20.0)
 ## Global tightening of that gap (20% shorter).
 const SHOT_INTERVAL_SCALE := 0.8
-## Health carries over between levels; after every HEALTH_BOOST_EVERY levels
-## the frog gets HEALTH_BOOST_FRACTION of their current health back (rounded
-## down, capped at START_HEALTH).
-const HEALTH_BOOST_EVERY := 3
-const HEALTH_BOOST_FRACTION := 0.25
+## Health carries over between levels; after every level won a field medic
+## adds a random 0..HEALTH_BOOST_MAX points (never above START_HEALTH).
+const HEALTH_BOOST_MAX := 25
 
 enum Training { LOW, MEDIUM, EXPERT }
 enum Weather { CLEAR, STORM, SNOW }
@@ -77,7 +75,8 @@ const WEATHER_PHRASES := {
 ## between shots further for that level.
 const ROUNDS := [
 	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.LOW},       # 1
-	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.LOW},       # 2
+	# TEMP: level 2 is snowy for testing - set back to Weather.CLEAR.
+	{"snipers": 2, "weather": Weather.SNOW, "training": Training.LOW},        # 2
 	{"snipers": 3, "weather": Weather.CLEAR, "training": Training.LOW},       # 3
 	{"snipers": 4, "weather": Weather.CLEAR, "training": Training.LOW},       # 4
 	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.MEDIUM},    # 5
@@ -165,13 +164,13 @@ func weather_short(w: int) -> String:
 		_: return "CLEAR"
 
 
-## Call once when the current level is won. Every HEALTH_BOOST_EVERY levels
-## the frog is patched up by 25% of their current health (rounded down).
-## Returns the amount added.
+## Call once when the current level is won: the field medic patches the
+## frog up by a random 0..HEALTH_BOOST_MAX points, capped at START_HEALTH.
+## Returns the amount actually added.
 func apply_health_boost() -> int:
-	if (round_index + 1) % HEALTH_BOOST_EVERY != 0 or is_last_round():
+	if is_last_round():
 		return 0
-	var boost := mini(int(floor(health * HEALTH_BOOST_FRACTION)), START_HEALTH - health)
+	var boost := mini(randi_range(0, HEALTH_BOOST_MAX), START_HEALTH - health)
 	health += boost
 	return boost
 

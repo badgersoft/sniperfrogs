@@ -1,6 +1,6 @@
 extends Control
-## Victorious end-of-round screen. Collates the round's points and then
-## drains the remaining seconds into the score at 500 points each.
+## Victorious end-of-round screen. Collates the level's bounty and then
+## drains the remaining seconds into the score at $500 each.
 
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const SpyRoom := preload("res://scripts/screens/spy_room.gd")
@@ -52,16 +52,16 @@ func _ready() -> void:
 	grid.add_theme_constant_override("v_separation", 8)
 	v.add_child(grid)
 	var kills := int(r.get("kills", 0))
-	_row(grid, "Snipers eliminated  (%d x 10,000)" % kills, "+" + Hud._fmt(int(r.get("kill_points", 0))), UIKit.GREEN)
+	_row(grid, "Snipers eliminated  (%d x $10,000)" % kills, "+" + Hud._fmt(int(r.get("kill_points", 0))), UIKit.GREEN)
 	var civ := int(r.get("civilians", 0))
 	_row(grid, "Civilian casualties  (%d)" % civ, ("-" + Hud._fmt(int(r.get("penalty", 0)))) if civ > 0 else "0", UIKit.RED if civ > 0 else UIKit.TEXT)
 	var boost := int(r.get("health_boost", 0))
 	_row(grid, "Health carried forward", "%d%%" % int(r.get("health", 100)), UIKit.TEXT)
-	if boost > 0:
-		_row(grid, "Field medic boost  (every 3 levels)", "+%d%%  ->  %d%%" % [boost, GameState.health], UIKit.GREEN)
+	if not GameState.is_last_round():
+		_row(grid, "Field medic boost", "+%d%%  ->  %d%%" % [boost, GameState.health], UIKit.GREEN if boost > 0 else UIKit.TEXT)
 	_row(grid, "Bullets remaining", str(int(r.get("bullets_left", 0))), UIKit.TEXT)
 	_time_val = _row(grid, "Seconds left on the clock", "%ds" % _secs, UIKit.TEXT)
-	_bonus_val = _row(grid, "Time bonus  (500 / second)", "+0", UIKit.GOLD)
+	_bonus_val = _row(grid, "Time bonus  ($500 / second)", "+0", UIKit.GOLD)
 	v.add_child(_rule())
 	var tot := HBoxContainer.new()
 	var tl := UIKit.label("TOTAL SCORE", 30, UIKit.TEXT, UIKit.title_font())

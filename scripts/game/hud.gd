@@ -212,10 +212,12 @@ func _ellipse(c: Vector2, r: Vector2) -> PackedVector2Array:
 	return pts
 
 
+## Money formatting for every score in the game: 12345 -> "$12,345",
+## -2345 -> "-$2,345".
 static func _fmt(n: int) -> String:
 	var s := str(absi(n))
 	var out := ""
 	while s.length() > 3:
 		out = "," + s.substr(s.length() - 3) + out
 		s = s.substr(0, s.length() - 3)
-	return ("-" if n < 0 else "") + s + out
+	return ("-$" if n < 0 else "$") + s + out

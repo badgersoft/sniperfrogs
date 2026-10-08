@@ -433,7 +433,7 @@ func _kill_bunny(b: Node2D) -> void:
 	var c: Vector2 = b.world_rect().get_center()
 	_fx.blood(c, 34)
 	_fx.glass(c, 20)
-	_fx.popup(c - Vector2(0, 26), "+10,000", UIKit.GOLD, 26)
+	_fx.popup(c - Vector2(0, 26), "+" + Hud._fmt(GameState.POINTS_PER_BUNNY), UIKit.GOLD, 26)
 	Sfx.play("glass", -3.0)
 	Sfx.play("splat", -2.0)
 	snipers_killed += 1

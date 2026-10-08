@@ -33,19 +33,19 @@ The game ships with **no asset files**. All graphics are drawn at runtime with `
 
 - The street is about 3 screens wide and scrolls left and right only. It has 15 high-rises (5 small with 2 windows per floor, 5 medium with 4, 5 large with 6), each 4–10 floors high with a ground floor, door and an optional shop sign.
 - Bunny snipers hide behind ordinary-looking windows. **They only show up through the scope.** The scope is a `SubViewport` that shares the game's `World2D` and renders an extra visibility layer that the main view culls.
-- Each level lasts 90 s and gives you 15 bullets. You start the campaign on 100% health and it **carries over between levels**. After every 3rd level a field medic restores 25% of your current health (rounded down, capped at 100%). A bunny kill is worth **10,000** points. Hitting a civilian costs **1,000–5,000** points.
+- Each level lasts 90 s and gives you 15 bullets. You start the campaign on 100% health and it **carries over between levels**. After every level won, a field medic adds a random 0–25% (capped at 100%). Scores are in dollars: a bunny kill is worth a **$10,000** bounty, and hitting a civilian costs **$1,000–$5,000**.
 - Bunnies fire every 8–16 s at low training. Each training grade shortens that gap by a further 15% (medium 6.8–13.6 s, expert 5.6–11.2 s), and the final level shortens it again (4.2–8.4 s). You'll see a muzzle flash at their window and hear a muffled, positional shot, and an orange glow marks the screen edge when the shooter is off-screen. Their chance of missing depends on training: low 3/4, medium 2/4, expert 1/4. Each hit costs about 25% health.
 - In storms, a bunny may time its shot with the lightning, which hides the flash and drowns out the report.
-- In snow (levels 8 and 12) every gunshot is muffled, and snow flurries every so often blur the whole view, scope included.
+- In snow (levels 8 and 12, plus level 2 for now while testing) every gunshot is muffled, and snow flurries every so often blur the whole view, scope included.
 - Each briefing describes the weather with a randomly chosen phrase, so levels read differently.
 - Each briefing opens with a coded "...Level x clearance granted." message that decrypts on screen.
-- Clear every sniper to win the level. Each second left on the clock then adds **500** points, counted up on the results screen.
+- Clear every sniper to win the level. Each second left on the clock then adds **$500**, counted up on the results screen.
 - If the clock runs out, the presidential limousine arrives and stops mid-screen, and then it's game over.
 
 | Level | Snipers | Weather | Training |
 |---|---|---|---|
 | 1 | 1 | Clear | Low |
-| 2 | 2 | Clear | Low |
+| 2 | 2 | Clear (temporarily **Snow** for testing) | Low |
 | 3 | 3 | Clear | Low |
 | 4 | 4 | Clear | Low |
 | 5 | 1 | Clear | Medium |

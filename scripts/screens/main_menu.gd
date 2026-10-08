@@ -3,6 +3,7 @@ extends Control
 ## Start / Instructions buttons.
 
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const Hud := preload("res://scripts/game/hud.gd")
 const SpyRoom := preload("res://scripts/screens/spy_room.gd")
 
 const ROLL_CALL_WIDTH := 400.0
@@ -93,8 +94,9 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	panel.custom_minimum_size = Vector2(ROLL_CALL_WIDTH, 0)
-	var box := UIKit.panel_box(0.38)
-	box.border_color = Color(UIKit.GOLD, 0.35)
+	var box := UIKit.panel_box(0.6)
+	box.border_color = Color(UIKit.GOLD, 0.55)
+	box.set_border_width_all(3)
 	box.shadow_size = 8
 	box.shadow_color = Color(0, 0, 0, 0.25)
 	panel.add_theme_stylebox_override("panel", box)
@@ -142,7 +144,7 @@ static func build_roll_call(highlight: int, font_size: int) -> GridContainer:
 		var nm := UIKit.label(str(e[0]), font_size, c, font)
 		nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		nm.clip_text = true
-		var sc := UIKit.label(_fmt(int(e[1])), font_size, c, font)
+		var sc := UIKit.label(Hud._fmt(int(e[1])), font_size, c, font)
 		sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		sc.custom_minimum_size.x = font_size * 5.0
 		for l in [rank, nm, sc]:
@@ -154,12 +156,3 @@ static func build_roll_call(highlight: int, font_size: int) -> GridContainer:
 func _on_start() -> void:
 	GameState.new_game()
 	main.goto("briefing")
-
-
-static func _fmt(n: int) -> String:
-	var s := str(n)
-	var out := ""
-	while s.length() > 3:
-		out = "," + s.substr(s.length() - 3) + out
-		s = s.substr(0, s.length() - 3)
-	return s + out
