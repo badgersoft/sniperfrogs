@@ -5,6 +5,7 @@ extends Control
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const SpyRoom := preload("res://scripts/screens/spy_room.gd")
 const Hud := preload("res://scripts/game/hud.gd")
+const MainMenu := preload("res://scripts/screens/main_menu.gd")
 
 var main: Node
 var _box: VBoxContainer
@@ -102,21 +103,11 @@ func _show_roll_call(highlight: int) -> void:
 	var head := UIKit.label("HONOURABLE ROLL CALL", 24, UIKit.GOLD, UIKit.title_font())
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(head)
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 24)
-	grid.add_theme_constant_override("v_separation", 0)
 	var cc := CenterContainer.new()
+	var grid := MainMenu.build_roll_call(highlight, 20)
+	grid.custom_minimum_size.x = 380
 	cc.add_child(grid)
 	_box.add_child(cc)
-	for i in GameState.highscores.size():
-		var e: Array = GameState.highscores[i]
-		var col := UIKit.GOLD if i == highlight else UIKit.TEXT_DIM
-		grid.add_child(UIKit.label("%2d." % (i + 1), 18, col, UIKit.mono_font()))
-		grid.add_child(UIKit.label(str(e[0]), 18, col))
-		var s := UIKit.label(Hud._fmt(int(e[1])), 18, col, UIKit.mono_font())
-		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		grid.add_child(s)
 	var back := UIKit.button("RETURN TO HQ", 320)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back.pressed.connect(func(): main.goto("menu"))

@@ -1,6 +1,7 @@
 extends Control
-## Procedurally painted spy apartment used behind the main menu: a messy desk
-## covered in dossiers, a revolver, coffee, an evidence board and a rainy
+## Procedurally painted Cold War spy office used behind the main menu: a grey
+## steel desk covered in dossiers, a Walther PPK, a red hotline phone, a
+## Frog Bureau mug, an evidence board, a map of the Iron Curtain and a rainy
 ## window with venetian blinds. Painted in a 1280x720 design space and scaled
 ## to cover whatever size the control ends up.
 
@@ -41,24 +42,32 @@ func _draw() -> void:
 	_draw_wall()
 	_draw_window(Rect2(820, 60, 340, 300))
 	_draw_board(Rect2(70, 70, 420, 280))
+	_draw_wall_map(Rect2(540, 96, 230, 165))
 	_draw_lamp_glow()
 	_draw_desk()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_wall() -> void:
-	var top := Color("#2a2f2c")
-	var bottom := Color("#16191a")
+	# Institutional grey-green paint, darker wainscot panelling below.
+	var top := Color("#3b4144")
+	var bottom := Color("#262b2e")
 	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(W, 0), Vector2(W, 520), Vector2(0, 520)]),
 		PackedColorArray([top, top, bottom, bottom]))
 	for x in range(0, int(W), 46):
-		draw_rect(Rect2(x, 0, 18, 520), Color(1, 1, 1, 0.025))
+		draw_rect(Rect2(x, 0, 18, 380), Color(1, 1, 1, 0.018))
+	draw_rect(Rect2(0, 380, W, 120), Color("#23282b"))
+	draw_rect(Rect2(0, 380, W, 4), Color("#4a5155"))
+	var px := 20.0
+	while px < W:
+		draw_rect(Rect2(px, 396, 150, 90), Color(1, 1, 1, 0.03), false, 2)
+		px += 170.0
 	# Skirting board.
-	draw_rect(Rect2(0, 500, W, 20), Color("#1d1512"))
+	draw_rect(Rect2(0, 500, W, 20), Color("#1b1f22"))
 
 
 func _draw_window(r: Rect2) -> void:
-	draw_rect(r.grow(14), Color("#3b2c22"))
+	draw_rect(r.grow(14), Color("#474d52"))
 	var sky_top := Color("#0b1630")
 	var sky_bot := Color("#25315a")
 	draw_polygon(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]),
@@ -92,21 +101,21 @@ func _draw_window(r: Rect2) -> void:
 	# Venetian blinds, partly open.
 	var y2 := r.position.y
 	while y2 < r.position.y + r.size.y * 0.62:
-		draw_rect(Rect2(r.position.x - 6, y2, r.size.x + 12, 9), Color("#c9b99a"))
-		draw_rect(Rect2(r.position.x - 6, y2 + 7, r.size.x + 12, 2), Color("#8a7a60"))
+		draw_rect(Rect2(r.position.x - 6, y2, r.size.x + 12, 9), Color("#b4b9bc"))
+		draw_rect(Rect2(r.position.x - 6, y2 + 7, r.size.x + 12, 2), Color("#7c8286"))
 		y2 += 15
 	draw_line(Vector2(r.position.x + 40, r.position.y), Vector2(r.position.x + 40, y2 + 60), Color("#ddd"), 1.5)
 	# Frame cross.
-	draw_rect(Rect2(r.position.x + r.size.x * 0.5 - 4, r.position.y, 8, r.size.y), Color("#3b2c22"))
-	draw_rect(Rect2(r.position.x, r.position.y + r.size.y * 0.5 - 4, r.size.x, 8), Color("#3b2c22"))
+	draw_rect(Rect2(r.position.x + r.size.x * 0.5 - 4, r.position.y, 8, r.size.y), Color("#474d52"))
+	draw_rect(Rect2(r.position.x, r.position.y + r.size.y * 0.5 - 4, r.size.x, 8), Color("#474d52"))
 	# Moonlight falling into the room.
 	draw_colored_polygon(PackedVector2Array([r.position + Vector2(0, r.size.y), r.end, Vector2(r.end.x - 120, 720), Vector2(r.position.x - 260, 720)]),
 		Color(0.55, 0.65, 1.0, 0.05))
 
 
 func _draw_board(r: Rect2) -> void:
-	draw_rect(r.grow(10), Color("#4a3322"))
-	draw_rect(r, Color("#a87c4f"))
+	draw_rect(r.grow(10), Color("#3d4347"))
+	draw_rect(r, Color("#8a8275"))
 	for k in 260:
 		var p := r.position + Vector2(fmod(k * 37.1, r.size.x), fmod(k * 19.7, r.size.y))
 		draw_rect(Rect2(p, Vector2(2, 2)), Color(0.4, 0.25, 0.1, 0.3))
@@ -155,30 +164,31 @@ func _draw_lamp_glow() -> void:
 
 
 func _draw_desk() -> void:
-	# Desk top in perspective.
+	# Grey steel government-issue desk in perspective.
 	var top := PackedVector2Array([Vector2(-40, 520), Vector2(W + 40, 520), Vector2(W + 200, H), Vector2(-200, H)])
-	var wood_a := Color("#5a3a24")
-	var wood_b := Color("#3a2416")
-	draw_polygon(top, PackedColorArray([wood_a, wood_a, wood_b, wood_b]))
-	for k in 12:
-		var y := 528.0 + k * 16.0
-		draw_line(Vector2(-40, y), Vector2(W + 40, y + 6), Color(0, 0, 0, 0.12), 2)
+	var steel_a := Color("#575e62")
+	var steel_b := Color("#33393c")
+	draw_polygon(top, PackedColorArray([steel_a, steel_a, steel_b, steel_b]))
+	draw_rect(Rect2(-40, 520, W + 80, 5), Color("#6d7478"))
+	# Green linoleum blotter.
+	draw_colored_polygon(PackedVector2Array([Vector2(180, 545), Vector2(1000, 545), Vector2(1060, 720), Vector2(120, 720)]), Color("#34463d"))
 	# Papers and dossiers.
 	for p in _papers:
 		_draw_paper(p.pos, p.rot, p.size, p.tint)
 	_draw_folder(Vector2(560, 600), -0.12)
 	_draw_map(Vector2(260, 610), 0.18)
-	_draw_mug(Vector2(1120, 600))
-	_draw_revolver(Vector2(820, 640), -0.22, 1.25)
+	_draw_phone(Vector2(760, 560))
+	_draw_mug(Vector2(1150, 612))
+	_draw_ppk(Vector2(850, 612), -0.12, 1.25)
 	for k in 5:
 		_draw_cartridge(Vector2(960 + k * 22, 690 + (k % 2) * 8), 0.4 + k * 0.5)
 	# Desk lamp.
 	var lb := Vector2(1010, 470)
-	draw_line(lb + Vector2(80, 70), lb + Vector2(40, -10), Color("#1f2a26"), 6)
-	draw_line(lb + Vector2(40, -10), lb, Color("#1f2a26"), 6)
+	draw_line(lb + Vector2(80, 70), lb + Vector2(40, -10), Color("#24292c"), 6)
+	draw_line(lb + Vector2(40, -10), lb, Color("#24292c"), 6)
 	draw_colored_polygon(PackedVector2Array([lb + Vector2(-34, 12), lb + Vector2(-10, -22), lb + Vector2(22, -14), lb + Vector2(34, 12)]), Color("#2d4a3e"))
 	draw_circle(lb + Vector2(0, 12), 10, Color(1.0, 0.92, 0.6))
-	draw_colored_polygon(_ellipse(lb + Vector2(80, 74), Vector2(40, 10)), Color("#1f2a26"))
+	draw_colored_polygon(_ellipse(lb + Vector2(80, 74), Vector2(40, 10)), Color("#24292c"))
 
 
 func _draw_paper(pos: Vector2, rot: float, sz: Vector2, tint: float) -> void:
@@ -220,48 +230,166 @@ func _draw_map(pos: Vector2, rot: float) -> void:
 
 
 func _draw_mug(pos: Vector2) -> void:
-	draw_colored_polygon(_ellipse(pos + Vector2(4, 60), Vector2(46, 12)), Color(0, 0, 0, 0.3))
-	draw_rect(Rect2(pos + Vector2(-34, -10), Vector2(68, 70)), Color("#e8e2d4"))
-	draw_arc(pos + Vector2(36, 24), 18, -PI * 0.5, PI * 0.5, 16, Color("#e8e2d4"), 8)
-	draw_colored_polygon(_ellipse(pos + Vector2(0, -10), Vector2(34, 9)), Color("#3b2414"))
-	draw_string(UIKit.title_font(), pos + Vector2(-24, 34), "FBI", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#284a8a"))
+	# A shaded ceramic cylinder: per-strip lighting, elliptical rim, coffee.
+	var r := 56.0
+	var ry := 13.0
+	var h := 104.0
+	var top_y := pos.y - h * 0.5
+	var bot_y := pos.y + h * 0.5
+	var ceramic := Color("#ebe8e1")
+	draw_colored_polygon(_ellipse(Vector2(pos.x + 10, bot_y + 4), Vector2(r + 16, ry + 4)), Color(0, 0, 0, 0.3))
+	# Handle (drawn first so the body overlaps its roots).
+	var hc := Vector2(pos.x + r - 4, pos.y - 4)
+	draw_arc(hc, 30, -1.25, 1.25, 24, ceramic.darkened(0.35), 15, true)
+	draw_arc(hc, 30, -1.25, 1.25, 24, ceramic.darkened(0.12), 11, true)
+	draw_arc(hc, 33, -1.0, 0.2, 16, Color(1, 1, 1, 0.5), 2.5, true)
+	# Body strips with cylinder lighting from the upper left.
+	var n := 28
+	for i in n:
+		var x0 := pos.x - r + 2.0 * r * i / n
+		var x1 := pos.x - r + 2.0 * r * (i + 1) / n
+		var u0 := clampf((x0 - pos.x) / r, -1.0, 1.0)
+		var u1 := clampf((x1 - pos.x) / r, -1.0, 1.0)
+		var e0 := ry * sqrt(1.0 - u0 * u0)
+		var e1 := ry * sqrt(1.0 - u1 * u1)
+		var um := (u0 + u1) * 0.5
+		var light := clampf(cos(asin(um) + 0.65), 0.0, 1.0)
+		var shade := 0.58 + 0.42 * light + (0.12 if absf(um + 0.45) < 0.06 else 0.0)
+		var c := Color(ceramic.r * shade, ceramic.g * shade, ceramic.b * shade)
+		draw_colored_polygon(PackedVector2Array([Vector2(x0, top_y + e0), Vector2(x1, top_y + e1),
+			Vector2(x1, bot_y + e1), Vector2(x0, bot_y + e0)]), c)
+	# Rim, inner wall and coffee.
+	draw_colored_polygon(_ellipse(Vector2(pos.x, top_y), Vector2(r, ry), 40), ceramic.lightened(0.3))
+	draw_colored_polygon(_ellipse(Vector2(pos.x, top_y + 1), Vector2(r - 5, ry - 3), 40), ceramic.darkened(0.3))
+	draw_colored_polygon(_ellipse(Vector2(pos.x, top_y + 4), Vector2(r - 6, ry - 4.5), 40), Color("#2a170c"))
+	draw_colored_polygon(_ellipse(Vector2(pos.x - 14, top_y + 2.5), Vector2(14, 2.2), 16), Color(1, 1, 1, 0.18))
+	# Printed logo: "Frog Bureau Int." with bold red initials.
+	var parts := [["F", true], ["rog ", false], ["B", true], ["ureau ", false], ["I", true], ["nt.", false]]
+	var fs := 13
+	var total := 0.0
+	for pt in parts:
+		total += _part_font(pt[1]).get_string_size(pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tx := pos.x - total * 0.5 - 4.0
+	var ty := pos.y + 6.0
+	for pt in parts:
+		var f := _part_font(pt[1])
+		var col := Color("#c4161c") if pt[1] else Color("#1e2a48")
+		draw_string(f, Vector2(tx, ty), pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		tx += f.get_string_size(pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	# Little frog-badge above the text.
+	draw_circle(Vector2(pos.x - 4, pos.y - 18), 10, Color("#1e2a48"))
+	draw_circle(Vector2(pos.x - 4, pos.y - 18), 7.5, Color("#5cbf3c"))
+	draw_circle(Vector2(pos.x - 7.5, pos.y - 21), 2, Color.WHITE)
+	draw_circle(Vector2(pos.x - 0.5, pos.y - 21), 2, Color.WHITE)
+	# Steam.
 	for k in 3:
 		var pts := PackedVector2Array()
 		for j in 12:
-			var y := -20.0 - j * 8.0
-			pts.append(pos + Vector2(-12 + k * 12 + sin(_t * 2.0 + j * 0.6 + k) * 5.0, y))
-		draw_polyline(pts, Color(1, 1, 1, 0.12), 3, true)
+			var y := top_y - 6.0 - j * 8.0
+			pts.append(Vector2(pos.x - 16 + k * 16 + sin(_t * 2.0 + j * 0.6 + k) * 5.0, y))
+		draw_polyline(pts, Color(1, 1, 1, 0.1), 3, true)
 
 
-func _draw_revolver(pos: Vector2, rot: float, sc: float) -> void:
+func _part_font(bold: bool) -> Font:
+	return UIKit.title_font() if bold else UIKit.body_font()
+
+
+func _draw_ppk(pos: Vector2, rot: float, sc: float) -> void:
+	# Walther PPK: compact blued slide, short barrel, big rounded trigger
+	# guard and a swept-back grip with black checkered panels. Muzzle left.
 	var m := _xf(pos, rot).scaled_local(Vector2(sc, sc))
 	draw_set_transform_matrix(m)
-	var steel := Color("#3d434b")
-	var steel_hi := Color("#7c8590")
-	var wood := Color("#6b3b1f")
+	var blued := Color("#2a2e35")
+	var blued_hi := Color("#6b7380")
+	var frame := Color("#353a42")
+	var grip := Color("#141518")
 	# Shadow.
-	draw_colored_polygon(PackedVector2Array([Vector2(-120, 18), Vector2(70, 14), Vector2(110, 60), Vector2(60, 70), Vector2(-120, 28)]), Color(0, 0, 0, 0.35))
-	# Barrel.
-	draw_rect(Rect2(-130, -12, 120, 15), steel)
-	draw_rect(Rect2(-130, -12, 120, 4), steel_hi)
-	draw_rect(Rect2(-130, 3, 105, 7), steel.darkened(0.2))
-	draw_rect(Rect2(-128, -18, 7, 6), steel)
-	# Frame and cylinder.
-	draw_rect(Rect2(-14, -16, 64, 30), steel)
-	draw_rect(Rect2(-6, -14, 46, 32), steel.darkened(0.1))
-	for k in 4:
-		draw_line(Vector2(-2 + k * 12, -12), Vector2(-2 + k * 12, 16), steel_hi.darkened(0.3), 2)
-	draw_rect(Rect2(-6, -14, 46, 4), steel_hi)
-	# Hammer.
-	draw_colored_polygon(PackedVector2Array([Vector2(46, -16), Vector2(60, -26), Vector2(66, -22), Vector2(56, -10)]), steel)
-	# Trigger guard and trigger.
-	draw_arc(Vector2(26, 22), 14, 0.0, PI, 16, steel, 4)
-	draw_line(Vector2(26, 14), Vector2(22, 28), steel_hi, 3)
-	# Grip.
-	draw_colored_polygon(PackedVector2Array([Vector2(40, 8), Vector2(62, 2), Vector2(96, 54), Vector2(90, 66), Vector2(64, 70), Vector2(40, 22)]), wood)
-	draw_colored_polygon(PackedVector2Array([Vector2(48, 14), Vector2(60, 10), Vector2(86, 56), Vector2(68, 60)]), wood.lightened(0.15))
-	draw_circle(Vector2(66, 36), 3, steel_hi)
+	draw_colored_polygon(PackedVector2Array([Vector2(-84, 10), Vector2(46, 8), Vector2(70, 78), Vector2(28, 84), Vector2(-84, 24)]), Color(0, 0, 0, 0.35))
+	# Grip, swept back.
+	draw_colored_polygon(PackedVector2Array([Vector2(6, 4), Vector2(46, 2), Vector2(62, 66), Vector2(58, 74), Vector2(24, 76), Vector2(16, 70)]), frame)
+	draw_colored_polygon(PackedVector2Array([Vector2(14, 10), Vector2(42, 9), Vector2(55, 63), Vector2(26, 68)]), grip)
+	for k in 7:
+		var o := k * 8.0
+		draw_line(Vector2(15 + o * 0.5, 14 + o), Vector2(42 + o * 0.25, 13 + o), Color(1, 1, 1, 0.07), 1)
+		draw_line(Vector2(18 + k * 5, 11), Vector2(28 + k * 4.5, 66), Color(1, 1, 1, 0.05), 1)
+	draw_circle(Vector2(34, 36), 5, Color("#3d434b"))
+	draw_circle(Vector2(34, 36), 3, Color("#8a919b"))
+	# Magazine base with finger rest.
+	draw_colored_polygon(PackedVector2Array([Vector2(16, 70), Vector2(24, 76), Vector2(58, 74), Vector2(56, 80), Vector2(20, 82), Vector2(10, 78)]), blued)
+	# Frame under the slide and the trigger guard.
+	draw_rect(Rect2(-74, 0, 120, 9), frame)
+	draw_arc(Vector2(-14, 7), 15, 0.0, PI, 24, frame, 5, true)
+	draw_line(Vector2(-12, 7), Vector2(-15, 18), blued_hi.darkened(0.2), 3)
+	# Barrel tip.
+	draw_rect(Rect2(-90, -16, 8, 10), Color("#1a1c20"))
+	draw_circle(Vector2(-90, -11), 3.2, Color("#050505"))
+	# Slide.
+	draw_colored_polygon(PackedVector2Array([Vector2(-84, -22), Vector2(42, -24), Vector2(48, -18), Vector2(48, 0), Vector2(-84, 0), Vector2(-87, -4), Vector2(-87, -18)]), blued)
+	draw_rect(Rect2(-84, -22, 128, 3), blued_hi)
+	draw_line(Vector2(-84, -9), Vector2(46, -9), Color(1, 1, 1, 0.08), 1)
+	for k in 7:
+		draw_line(Vector2(22 + k * 3.4, -20), Vector2(22 + k * 3.4, -3), Color(0, 0, 0, 0.55), 1.4)
+	draw_rect(Rect2(-14, -20, 22, 8), Color("#121418"))
+	draw_rect(Rect2(-80, -27, 5, 5), blued)
+	draw_rect(Rect2(36, -28, 8, 5), blued)
+	# Safety lever, hammer and slide stamping.
+	draw_circle(Vector2(30, -12), 4, blued_hi.darkened(0.25))
+	draw_line(Vector2(30, -12), Vector2(40, -8), blued_hi.darkened(0.25), 2.5)
+	draw_colored_polygon(PackedVector2Array([Vector2(47, -14), Vector2(54, -19), Vector2(57, -16), Vector2(50, -9)]), blued)
+	draw_string(UIKit.body_font(), Vector2(-62, -11), "WALTHER  PPK", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1, 1, 1, 0.35))
 	_reset_xf()
+
+
+func _draw_phone(pos: Vector2) -> void:
+	# The red hotline: rotary dial telephone.
+	var red := Color("#9b1c1c")
+	draw_colored_polygon(_ellipse(pos + Vector2(6, 40), Vector2(70, 12)), Color(0, 0, 0, 0.3))
+	draw_colored_polygon(PackedVector2Array([pos + Vector2(-58, 38), pos + Vector2(58, 38), pos + Vector2(44, -8), pos + Vector2(-44, -8)]), red)
+	draw_colored_polygon(PackedVector2Array([pos + Vector2(-44, -8), pos + Vector2(44, -8), pos + Vector2(34, -18), pos + Vector2(-34, -18)]), red.lightened(0.15))
+	# Dial.
+	var dc := pos + Vector2(0, 14)
+	draw_colored_polygon(_ellipse(dc, Vector2(26, 18)), Color("#e8e2d2"))
+	for k in 10:
+		var a := -PI * 0.35 + k * PI * 1.45 / 9.0
+		draw_colored_polygon(_ellipse(dc + Vector2(cos(a) * 18, sin(a) * 12.5), Vector2(4, 3), 10), Color("#3a1010"))
+	draw_colored_polygon(_ellipse(dc, Vector2(9, 6)), red.lightened(0.25))
+	# Handset resting on the cradle.
+	draw_rect(Rect2(pos + Vector2(-52, -34), Vector2(104, 12)), red.darkened(0.1))
+	draw_colored_polygon(_ellipse(pos + Vector2(-48, -26), Vector2(18, 11)), red.darkened(0.05))
+	draw_colored_polygon(_ellipse(pos + Vector2(48, -26), Vector2(18, 11)), red.darkened(0.05))
+	draw_rect(Rect2(pos + Vector2(-46, -34), Vector2(92, 3)), Color(1, 1, 1, 0.22))
+	# Curly cord.
+	var pts := PackedVector2Array()
+	for j in 40:
+		var t := float(j) / 39.0
+		pts.append(pos + Vector2(58 + t * 50, 20 + t * 40) + Vector2(cos(t * 40.0), sin(t * 40.0)) * 4.0)
+	draw_polyline(pts, red.darkened(0.3), 2, true)
+
+
+func _draw_wall_map(r: Rect2) -> void:
+	# Pinned map of Europe split by the Iron Curtain.
+	draw_rect(Rect2(r.position + Vector2(5, 6), r.size), Color(0, 0, 0, 0.35))
+	draw_rect(r, Color("#d8d4c4"))
+	draw_rect(Rect2(r.position.x + r.size.x * 0.52, r.position.y, r.size.x * 0.48, r.size.y), Color(0.75, 0.2, 0.2, 0.18))
+	draw_rect(Rect2(r.position.x, r.position.y, r.size.x * 0.52, r.size.y), Color(0.2, 0.35, 0.75, 0.12))
+	var land := Color("#9fa98f")
+	var o := r.position
+	draw_colored_polygon(PackedVector2Array([o + Vector2(20, 40), o + Vector2(70, 22), o + Vector2(140, 30), o + Vector2(205, 26),
+		o + Vector2(220, 80), o + Vector2(190, 140), o + Vector2(120, 150), o + Vector2(90, 120), o + Vector2(40, 140), o + Vector2(28, 95)]), land)
+	draw_colored_polygon(PackedVector2Array([o + Vector2(14, 50), o + Vector2(30, 30), o + Vector2(36, 62), o + Vector2(20, 72)]), land)
+	for k in 6:
+		draw_line(o + Vector2(0, k * 30), o + Vector2(r.size.x, k * 30), Color(0.3, 0.3, 0.3, 0.15), 1)
+		draw_line(o + Vector2(k * 46, 0), o + Vector2(k * 46, r.size.y), Color(0.3, 0.3, 0.3, 0.15), 1)
+	# The Curtain.
+	var pts := PackedVector2Array()
+	for j in 12:
+		pts.append(o + Vector2(r.size.x * 0.52 + sin(j * 1.3) * 6.0, 18 + j * 12.0))
+	for j in range(0, pts.size() - 1, 2):
+		draw_line(pts[j], pts[j + 1], Color("#1a1a1a"), 3)
+	draw_circle(o + Vector2(150, 70), 5, Color("#c62828"))
+	draw_circle(o + Vector2(70, 95), 5, Color("#1565c0"))
+	draw_string(UIKit.title_font(), o + Vector2(8, r.size.y - 8), "EUROPA  1962", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#333"))
+	draw_circle(o + Vector2(r.size.x * 0.5, 6), 4, Color("#888"))
 
 
 func _draw_cartridge(pos: Vector2, rot: float) -> void:

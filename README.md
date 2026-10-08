@@ -1,5 +1,7 @@
 # Sniper Frogs (2027)
 
+**Version 0.11 (beta)**
+
 A Godot 4.7 remake of the 2006 Badger-soft arcade sniper game. It runs on PC and mobile in 2D.
 
 > The year is 2027, and the Bunnies are back. Bunny McWhurter has come out of hiding, and his snipers are after the world's last good leaders. As a Sniper Frog, your job is to take out the Bunny snipers before they get the President.
@@ -25,6 +27,7 @@ The game ships with **no asset files**. All graphics are drawn at runtime with `
 | Fire | Left click / Space | **FIRE** button (bottom right) |
 | Scroll | Push the scope to the screen edge, use A/D or ←/→, or the mouse wheel | Steer the scope to the screen edge |
 | Pause | Esc / P / the pause button | The pause button (top right) |
+| Skip briefing | Click / Space at any point (N aborts at the prompt) | Tap |
 
 ## How it plays
 
@@ -52,7 +55,7 @@ The game ships with **no asset files**. All graphics are drawn at runtime with `
 
 All the gameplay numbers live at the top of `scripts/autoload/game_state.gd`:
 
-- `SCOPE_DIAMETER_FRACTION`: scope diameter as a fraction of screen width (default `1/25`)
+- `SCOPE_DIAMETER_FRACTION`: scope diameter as a fraction of screen width (default `1.5/25`)
 - `SCOPE_TOUCH_MULTIPLIER`: makes the scope bigger on touch screens
 - `SCOPE_MAGNIFICATION`: zoom through the scope
 - Round time, bullets, damage, points, miss chances, shot interval, and the `ROUNDS` table
@@ -73,4 +76,6 @@ scripts/game/               game controller, buildings, bunny, pedestrians, cars
 shaders/                    scope lens mask, CRT terminal overlay
 ```
 
-High scores (the "Honourable Roll Call") are saved to `user://honourable_roll_call.cfg`.
+High scores (the "Honourable Roll Call", top 5) are saved to `user://honourable_roll_call.cfg`.
+
+The version string lives in `GameState.VERSION` (and `application/config/version` in `project.godot`).

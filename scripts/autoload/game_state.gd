@@ -2,9 +2,11 @@ extends Node
 ## Global game state: tuning constants, round table, score and the
 ## "Honourable Roll Call" high-score table.
 
+const VERSION := "0.11 (beta)"
+
 # ---------------------------------------------------------------- tuning ---
-## Scope diameter as a fraction of the visible screen width (spec: ~1/25).
-const SCOPE_DIAMETER_FRACTION := 1.0 / 25.0
+## Scope diameter as a fraction of the visible screen width (1/25 + 50%).
+const SCOPE_DIAMETER_FRACTION := 1.5 / 25.0
 ## Extra scope size multiplier used on touch screens (fingers are fat).
 const SCOPE_TOUCH_MULTIPLIER := 1.6
 ## How much the scope magnifies the world behind it.
@@ -44,18 +46,13 @@ const ROUNDS := [
 ]
 
 const HIGHSCORE_PATH := "user://honourable_roll_call.cfg"
-const MAX_HIGHSCORES := 10
+const MAX_HIGHSCORES := 5
 const DEFAULT_HIGHSCORES := [
 	["Agent Ribbit", 240000],
 	["Lily Pad Lou", 205000],
 	["Bullfrog Bill", 180000],
 	["Croaky McCroak", 150000],
 	["Tadpole Tess", 120000],
-	["Hopkins 007", 95000],
-	["Swampy Sue", 70000],
-	["Leapy Leo", 50000],
-	["Toady Ted", 30000],
-	["Puddle Pete", 10000],
 ]
 
 # ----------------------------------------------------------------- state ---
@@ -129,6 +126,7 @@ func load_highscores() -> void:
 		for e in DEFAULT_HIGHSCORES:
 			highscores.append([e[0], e[1]])
 	_sort_scores()
+	highscores.resize(mini(highscores.size(), MAX_HIGHSCORES))
 
 
 func save_highscores() -> void:
