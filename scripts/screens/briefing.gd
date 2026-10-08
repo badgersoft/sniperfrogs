@@ -13,7 +13,9 @@ var _typing := ""
 var _cursor_on := true
 var _waiting_answer := false
 var _answered := false
-var _hint := ""
+var _hint := "[ click or press FIRE to skip ]"
+var _skipped := false
+var _aborted := false
 var _rng := RandomNumberGenerator.new()
 var _t := 0.0
 
@@ -69,28 +71,44 @@ func _draw() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not _waiting_answer:
-		return
+	# Click / tap / FIRE at any point (including the Y/N prompt) deploys
+	# straight into the round.
 	if (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) \
 			or (event is InputEventScreenTouch and event.pressed):
-		_answer(true)
 		accept_event()
+		_skip()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _waiting_answer:
+	if event.is_action_pressed("fire"):
+		_skip()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_N or event.keycode == KEY_ESCAPE:
+		if _waiting_answer and (event.keycode == KEY_N or event.keycode == KEY_ESCAPE):
 			_answer(false)
-		elif event.keycode in [KEY_Y, KEY_ENTER, KEY_SPACE, KEY_KP_ENTER]:
-			_answer(true)
+		elif event.keycode in [KEY_Y, KEY_ENTER, KEY_KP_ENTER]:
+			_skip()
+
+
+## Deploy immediately, whatever point the briefing has reached.
+func _skip() -> void:
+	if _skipped or _aborted:
+		return
+	_skipped = true
+	_hint = ""
+	if _waiting_answer:
+		_typing += "Y"
+	_commit()
+	_typing = "...connection terminated."
+	Sfx.play("accept", -4.0)
+	main.goto("game", 0.4)
 
 
 func _answer(yes: bool) -> void:
 	if _answered:
 		return
 	_answered = true
+	_aborted = not yes
 	_waiting_answer = false
 	_hint = ""
 	_typing += "Y" if yes else "N"
@@ -100,7 +118,7 @@ func _answer(yes: bool) -> void:
 ## Awaits `t` seconds; returns false if this screen was freed meanwhile.
 func _wait(t: float) -> bool:
 	await get_tree().create_timer(t).timeout
-	return is_inside_tree()
+	return is_inside_tree() and not _skipped
 
 
 func _type_line(text: String) -> bool:
@@ -147,60 +165,17 @@ func _run() -> void:
 			return
 	if not await _type_line("...Deploy frog asset Y/N? "):
 		return
-	_hint = "[ click / tap to accept  -  N to abort ]"
+	_hint = "[ click or press FIRE to deploy  -  N to abort ]"
 	_waiting_answer = true
 	while not _answered:
 		if not await _wait(0.05):
 			return
+	# Only "N" gets here - accepting goes through _skip().
 	_commit()
 	if not await _wait(0.4):
 		return
-	if _lines[-1].ends_with("N"):
-		if not await _type_line("...Mission aborted. Returning to HQ."):
-			return
-		_commit()
-		if await _wait(1.0):
-			main.goto("menu")
+	if not await _type_line("...Mission aborted. Returning to HQ."):
 		return
-
-	# Unreadable encrypted chatter.
-	var t0 := _t
-	while _t - t0 < 2.6:
-		_lines.append(_garbage())
-		if _lines.size() > 80:
-			_lines.pop_front()
-		if _rng.randf() < 0.5:
-			Sfx.play_varied("type", -14.0, 0.3)
-		if not await _wait(0.035):
-			return
-	if not await _type_line("...connection terminated."):
-		return
-	if await _wait(1.2):
-		main.goto("game", 0.5)
-
-
-func _garbage() -> String:
-	var kind := _rng.randi() % 4
-	match kind:
-		0:
-			var s := "0x%08X  " % _rng.randi()
-			for i in 8:
-				s += "%02x " % (_rng.randi() % 256)
-			return s
-		1:
-			var ops := ["decrypt", "route", "ping", "sync", "auth", "tx", "uplink", "scan"]
-			return "%s(%04x) -> [%s] %d%%" % [ops[_rng.randi() % ops.size()], _rng.randi() % 65536,
-				_rand_str(6), _rng.randi() % 101]
-		2:
-			return "  " + _rand_str(_rng.randi_range(18, 46))
-		_:
-			return "SAT-%d :: lat %.4f lon %.4f :: %s" % [_rng.randi() % 99, _rng.randf_range(-90, 90),
-				_rng.randf_range(-180, 180), "OK" if _rng.randf() < 0.8 else "RETRY"]
-
-
-func _rand_str(n: int) -> String:
-	const CH := "ABCDEF0123456789#$%&*!?<>/\\|=+-_~abcdefghijklmnopqrstuvwxyz"
-	var s := ""
-	for i in n:
-		s += CH[_rng.randi() % CH.length()]
-	return s
+	_commit()
+	if await _wait(1.0):
+		main.goto("menu")
