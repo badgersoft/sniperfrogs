@@ -263,24 +263,44 @@ func _draw_mug(pos: Vector2) -> void:
 	draw_colored_polygon(_ellipse(Vector2(pos.x, top_y + 1), Vector2(r - 5, ry - 3), 40), ceramic.darkened(0.3))
 	draw_colored_polygon(_ellipse(Vector2(pos.x, top_y + 4), Vector2(r - 6, ry - 4.5), 40), Color("#2a170c"))
 	draw_colored_polygon(_ellipse(Vector2(pos.x - 14, top_y + 2.5), Vector2(14, 2.2), 16), Color(1, 1, 1, 0.18))
-	# Printed logo: "Frog Bureau Int." with bold red initials.
+	# Printed logo: "Frog Bureau Int." with bold red initials, wrapped round
+	# the cylinder: each glyph is placed at an angle around the mug, so it is
+	# squeezed towards the edges and follows the curve of the rim.
 	var parts := [["F", true], ["rog ", false], ["B", true], ["ureau ", false], ["I", true], ["nt.", false]]
 	var fs := 13
+	var glyphs := []   # [char, bold, advance]
 	var total := 0.0
 	for pt in parts:
-		total += _part_font(pt[1]).get_string_size(pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var tx := pos.x - total * 0.5 - 4.0
-	var ty := pos.y + 6.0
-	for pt in parts:
 		var f := _part_font(pt[1])
-		var col := Color("#c4161c") if pt[1] else Color("#1e2a48")
-		draw_string(f, Vector2(tx, ty), pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-		tx += f.get_string_size(pt[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	# Little frog-badge above the text.
-	draw_circle(Vector2(pos.x - 4, pos.y - 18), 10, Color("#1e2a48"))
-	draw_circle(Vector2(pos.x - 4, pos.y - 18), 7.5, Color("#5cbf3c"))
-	draw_circle(Vector2(pos.x - 7.5, pos.y - 21), 2, Color.WHITE)
-	draw_circle(Vector2(pos.x - 0.5, pos.y - 21), 2, Color.WHITE)
+		for ch in pt[0]:
+			var adv := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			glyphs.append([ch, pt[1], adv])
+			total += adv
+	var wrap_r := r * 1.05          # text sits just proud of the surface
+	var sag := ry * 0.85            # how much the line dips at the front
+	var base_y := pos.y + 8.0
+	var arc := -total * 0.5
+	for g in glyphs:
+		var adv: float = g[2]
+		var theta := (arc + adv * 0.5) / wrap_r
+		var squeeze := cos(theta)
+		var gx := pos.x + wrap_r * sin(theta)
+		var gy := base_y - sag * (1.0 - cos(theta))
+		var slope := atan2(-sag * sin(theta), wrap_r * cos(theta))
+		var f := _part_font(g[1])
+		var col := Color("#c4161c") if g[1] else Color("#1e2a48")
+		# Fade slightly as the letters turn away from the light / viewer.
+		col = col.lerp(Color(0.55, 0.55, 0.55), (1.0 - squeeze) * 0.5)
+		draw_set_transform_matrix(_xf(Vector2(gx, gy), slope).scaled_local(Vector2(squeeze, 1.0)))
+		draw_char(f, Vector2(-adv * 0.5, 0), g[0], fs, col)
+		arc += adv
+	_reset_xf()
+	# Little frog-badge above the text, centred on the mug.
+	var bc := Vector2(pos.x, pos.y - 17)
+	draw_circle(bc, 10, Color("#1e2a48"))
+	draw_circle(bc, 7.5, Color("#5cbf3c"))
+	draw_circle(bc + Vector2(-3.5, -3), 2, Color.WHITE)
+	draw_circle(bc + Vector2(3.5, -3), 2, Color.WHITE)
 	# Steam.
 	for k in 3:
 		var pts := PackedVector2Array()
