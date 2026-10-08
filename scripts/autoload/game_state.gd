@@ -20,7 +20,10 @@ const POINTS_PER_BUNNY := 10000
 const CIVILIAN_PENALTY_MIN := 1000
 const CIVILIAN_PENALTY_MAX := 5000
 const TIME_BONUS_PER_SECOND := 500
+## Base gap (seconds) between a bunny's shots, before the scaling below.
 const BUNNY_SHOT_INTERVAL := Vector2(10.0, 20.0)
+## Global tightening of that gap (20% shorter).
+const SHOT_INTERVAL_SCALE := 0.8
 ## Health carries over between levels; after every HEALTH_BOOST_EVERY levels
 ## the frog gets HEALTH_BOOST_FRACTION of their current health back (rounded
 ## down, capped at START_HEALTH).
@@ -28,7 +31,7 @@ const HEALTH_BOOST_EVERY := 3
 const HEALTH_BOOST_FRACTION := 0.25
 
 enum Training { LOW, MEDIUM, EXPERT }
-enum Weather { CLEAR, STORM }
+enum Weather { CLEAR, STORM, SNOW }
 
 ## Probability that a bunny sniper MISSES the frog for each training level.
 const MISS_CHANCE := {
@@ -37,8 +40,41 @@ const MISS_CHANCE := {
 	Training.EXPERT: 0.25,
 }
 
-## The campaign: one entry per level. "shot_interval" (optional) overrides
-## BUNNY_SHOT_INTERVAL for that level.
+## Each training grade above LOW shortens the gap between shots by a further
+## 15% (medium 15% shorter, expert 30% shorter).
+const TRAINING_SHOT_SCALE := {
+	Training.LOW: 1.0,
+	Training.MEDIUM: 0.85,
+	Training.EXPERT: 0.70,
+}
+
+## Briefing phrases so each level's forecast reads differently.
+const WEATHER_PHRASES := {
+	Weather.CLEAR: [
+		"good. Clear skies.",
+		"good. Blue skies and a light breeze.",
+		"fine. Visibility excellent across the rooftops.",
+		"bright. Watch for glare off the glass.",
+		"fair. Warm and still - perfect shooting weather.",
+		"good. A few fluffy clouds, nothing to worry about.",
+	],
+	Weather.STORM: [
+		"bad. Storms and lightning.",
+		"foul. Heavy rain with thunder rolling in.",
+		"grim. Lightning over the skyline - they'll use the thunder.",
+		"rough. Driving rain and gusting wind.",
+		"poor. Low cloud and sheets of rain.",
+	],
+	Weather.SNOW: [
+		"freezing. Snow is falling.",
+		"bitter. Heavy snow is muffling every sound.",
+		"icy. Snow flurries - visibility will come and go.",
+		"arctic. The city is blanketed in snow.",
+		"cold. Snow squalls blowing through the streets.",
+	],
+}
+## The campaign: one entry per level. "shot_rate" (optional) scales the gap
+## between shots further for that level.
 const ROUNDS := [
 	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.LOW},       # 1
 	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.LOW},       # 2
@@ -47,14 +83,14 @@ const ROUNDS := [
 	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.MEDIUM},    # 5
 	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.MEDIUM},    # 6
 	{"snipers": 3, "weather": Weather.STORM, "training": Training.MEDIUM},    # 7
-	{"snipers": 4, "weather": Weather.STORM, "training": Training.MEDIUM},    # 8
+	{"snipers": 4, "weather": Weather.SNOW, "training": Training.MEDIUM},     # 8
 	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.EXPERT},    # 9
 	{"snipers": 2, "weather": Weather.STORM, "training": Training.EXPERT},    # 10
 	{"snipers": 3, "weather": Weather.CLEAR, "training": Training.EXPERT},    # 11
-	{"snipers": 4, "weather": Weather.STORM, "training": Training.EXPERT},    # 12
+	{"snipers": 4, "weather": Weather.SNOW, "training": Training.EXPERT},     # 12
 	# Final level: McWhurter's elite, firing far more often.
 	{"snipers": 6, "weather": Weather.STORM, "training": Training.EXPERT,
-		"shot_interval": Vector2(6.0, 11.0)},                                 # 13
+		"shot_rate": 0.75},                                                   # 13
 ]
 
 const HIGHSCORE_PATH := "user://honourable_roll_call.cfg"
@@ -103,8 +139,30 @@ func is_last_round() -> bool:
 	return round_index >= ROUNDS.size() - 1
 
 
+## Min/max seconds between one bunny's shots on the current level.
 func shot_interval() -> Vector2:
-	return current_round().get("shot_interval", BUNNY_SHOT_INTERVAL)
+	var cfg := current_round()
+	return BUNNY_SHOT_INTERVAL * SHOT_INTERVAL_SCALE * float(TRAINING_SHOT_SCALE[cfg.training]) \
+		* float(cfg.get("shot_rate", 1.0))
+
+
+func weather_phrase(w: int) -> String:
+	var pool: Array = WEATHER_PHRASES[w]
+	return pool[randi() % pool.size()]
+
+
+func weather_name(w: int) -> String:
+	match w:
+		Weather.STORM: return "STORMY"
+		Weather.SNOW: return "SNOWY"
+		_: return "SUNNY"
+
+
+func weather_short(w: int) -> String:
+	match w:
+		Weather.STORM: return "STORM"
+		Weather.SNOW: return "SNOW"
+		_: return "CLEAR"
 
 
 ## Call once when the current level is won. Every HEALTH_BOOST_EVERY levels

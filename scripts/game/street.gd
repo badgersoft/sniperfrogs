@@ -4,12 +4,14 @@ extends Node2D
 const L := preload("res://scripts/game/layout.gd")
 
 var storm := false
+var snow := false
 var _rng := RandomNumberGenerator.new()
 var _seed := 0
 
 
-func setup(is_storm: bool, seed_value: int) -> void:
+func setup(is_storm: bool, seed_value: int, is_snow := false) -> void:
 	storm = is_storm
+	snow = is_snow
 	_seed = seed_value
 
 
@@ -18,6 +20,8 @@ func _draw() -> void:
 	var w := L.WORLD_W
 	# Pavement.
 	var pave := Color("#cfc8bb") if not storm else Color("#a9a49b")
+	if snow:
+		pave = Color("#e8edf1")
 	draw_rect(Rect2(-200, L.SIDEWALK_TOP, w + 400, L.SIDEWALK_BOTTOM - L.SIDEWALK_TOP), pave)
 	draw_rect(Rect2(-200, L.SIDEWALK_TOP, w + 400, 4), pave.darkened(0.25))
 	var x := -200.0
@@ -30,6 +34,8 @@ func _draw() -> void:
 	draw_rect(Rect2(-200, L.SIDEWALK_BOTTOM - 1, w + 400, 2), Color(0, 0, 0, 0.25))
 	# Road.
 	var tar := Color("#44474d") if not storm else Color("#2f3236")
+	if snow:
+		tar = Color("#575c63")
 	draw_polygon(PackedVector2Array([Vector2(-200, L.ROAD_TOP), Vector2(w + 200, L.ROAD_TOP), Vector2(w + 200, L.ROAD_BOTTOM), Vector2(-200, L.ROAD_BOTTOM)]),
 		PackedColorArray([tar.darkened(0.15), tar.darkened(0.15), tar, tar]))
 	var mid := (L.LANE_FAR_Y + L.LANE_NEAR_Y) * 0.5 - 3.0
@@ -41,6 +47,19 @@ func _draw() -> void:
 	for i in 30:
 		var px := _rng.randf_range(0, w)
 		draw_rect(Rect2(px, L.ROAD_TOP + 2, 22, 5), Color(0, 0, 0, 0.35))
+	if snow:
+		# Slushy tyre tracks, a snowbank along the kerb and footprints.
+		for ty in [L.LANE_FAR_Y - 2.0, L.LANE_FAR_Y + 6.0, L.LANE_NEAR_Y - 2.0, L.LANE_NEAR_Y + 6.0]:
+			draw_rect(Rect2(-200, ty, w + 400, 3), Color(0.82, 0.85, 0.88, 0.35))
+		var bx := -200.0
+		while bx < w + 200:
+			var rw := _rng.randf_range(30, 70)
+			_ellipse(Vector2(bx, L.SIDEWALK_BOTTOM - 4), Vector2(rw, _rng.randf_range(4, 7)), Color("#f7f9fb"))
+			bx += rw * 1.3
+		for i in 260:
+			var fp := Vector2(_rng.randf_range(0, w), _rng.randf_range(L.SIDEWALK_TOP + 8, L.SIDEWALK_BOTTOM - 10))
+			_ellipse(fp, Vector2(2.2, 1.2), Color(0.6, 0.65, 0.72, 0.45))
+		draw_rect(Rect2(-200, L.SIDEWALK_TOP, w + 400, 3), Color("#f7f9fb"))
 	if storm:
 		# Puddles reflecting the grey sky.
 		for i in 26:
@@ -66,7 +85,9 @@ func _draw_lamp(p: Vector2) -> void:
 	draw_rect(Rect2(p.x - 1.5, p.y - 62, 3, 58), c)
 	draw_line(p + Vector2(0, -60), p + Vector2(12, -64), c, 2.5)
 	draw_rect(Rect2(p.x + 8, p.y - 66, 12, 5), c)
-	draw_rect(Rect2(p.x + 9, p.y - 61, 10, 2), Color("#fff2b0") if storm else Color("#f7f3e0"))
+	draw_rect(Rect2(p.x + 9, p.y - 61, 10, 2), Color("#fff2b0") if (storm or snow) else Color("#f7f3e0"))
+	if snow:
+		draw_rect(Rect2(p.x + 7, p.y - 69, 14, 3), Color("#f7f9fb"))
 
 
 func _draw_hydrant(p: Vector2) -> void:
@@ -74,6 +95,8 @@ func _draw_hydrant(p: Vector2) -> void:
 	draw_rect(Rect2(p.x - 4, p.y - 14, 8, 14), c)
 	draw_rect(Rect2(p.x - 6, p.y - 10, 12, 3), c.darkened(0.2))
 	draw_circle(p + Vector2(0, -14), 4, c)
+	if snow:
+		draw_circle(p + Vector2(0, -16), 3.5, Color("#f7f9fb"))
 
 
 func _draw_bin(p: Vector2) -> void:
@@ -81,6 +104,8 @@ func _draw_bin(p: Vector2) -> void:
 	draw_rect(Rect2(p.x - 7, p.y - 18, 14, 3), Color("#263238"))
 	for k in 2:
 		draw_line(Vector2(p.x - 3 + k * 6, p.y - 14), Vector2(p.x - 3 + k * 6, p.y - 2), Color(1, 1, 1, 0.15), 1)
+	if snow:
+		draw_rect(Rect2(p.x - 7, p.y - 21, 14, 3), Color("#f7f9fb"))
 
 
 func _draw_bench(p: Vector2) -> void:
@@ -89,6 +114,9 @@ func _draw_bench(p: Vector2) -> void:
 	draw_rect(Rect2(p.x - 18, p.y - 18, 36, 3), wood)
 	draw_rect(Rect2(p.x - 16, p.y - 10, 2, 10), Color("#333"))
 	draw_rect(Rect2(p.x + 14, p.y - 10, 2, 10), Color("#333"))
+	if snow:
+		draw_rect(Rect2(p.x - 18, p.y - 12, 36, 2), Color("#f7f9fb"))
+		draw_rect(Rect2(p.x - 18, p.y - 20, 36, 2), Color("#f7f9fb"))
 
 
 func _ellipse(c: Vector2, r: Vector2, col: Color) -> void:

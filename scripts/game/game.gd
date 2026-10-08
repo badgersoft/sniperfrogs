@@ -16,20 +16,23 @@ const Weather := preload("res://scripts/game/weather.gd")
 const Scope := preload("res://scripts/game/scope.gd")
 const Hud := preload("res://scripts/game/hud.gd")
 const Overlay := preload("res://scripts/game/overlay.gd")
+const BlurShader := preload("res://shaders/snow_blur.gdshader")
 
-enum State { INTRO, PLAYING, WON, LIMO, DEAD, DONE }
+enum State { INTRO, STARTING, PLAYING, WON, LIMO, DEAD, DONE }
 
 const BUILDING_COUNT := 15
 const EDGE_SCROLL_ZONE := 70.0
 const EDGE_SCROLL_SPEED := 1100.0
 const KEY_SCROLL_SPEED := 950.0
 const INTRO_TIME := 4.5
+const INTRO_FADE := 0.35          # intro card fade before play begins
 
 var main: Node
 
 # Public state read by the HUD.
 var state := State.INTRO
 var storm := false
+var snow := false
 var bullets := 15
 var time_left := 90.0
 var health := 100.0
@@ -56,6 +59,7 @@ var _weather: Node2D
 var _scope: Node2D
 var _hud: Control
 var _overlay: Control
+var _blur: ColorRect
 
 var _view_w := 1280.0
 var _aim := Vector2(640, 300)
@@ -83,6 +87,7 @@ func _ready() -> void:
 	_rng.randomize()
 	_cfg = GameState.current_round()
 	storm = _cfg.weather == GameState.Weather.STORM
+	snow = _cfg.weather == GameState.Weather.SNOW
 	bullets = GameState.BULLETS_PER_ROUND
 	time_left = GameState.ROUND_TIME
 	health = GameState.health
@@ -106,7 +111,7 @@ func _ready() -> void:
 	wl.layer = 5
 	add_child(wl)
 	_weather = Weather.new()
-	_weather.setup(storm)
+	_weather.setup(storm, snow)
 	_weather.lightning_flashed.connect(func(): _shake = maxf(_shake, 0.15))
 	wl.add_child(_weather)
 
@@ -119,6 +124,21 @@ func _ready() -> void:
 	if touch_mode:
 		dia *= GameState.SCOPE_TOUCH_MULTIPLIER
 	_scope.setup(get_viewport().world_2d, dia, GameState.SCOPE_MAGNIFICATION)
+	# No scope until the level card has faded away.
+	_scope.visible = false
+
+	if snow:
+		# Snow flurries blur the view (scope included) every so often.
+		var bl := CanvasLayer.new()
+		bl.layer = 15
+		add_child(bl)
+		_blur = ColorRect.new()
+		_blur.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var mat := ShaderMaterial.new()
+		mat.shader = BlurShader
+		_blur.material = mat
+		_blur.visible = false
+		bl.add_child(_blur)
 
 	var hl := CanvasLayer.new()
 	hl.layer = 20
@@ -140,8 +160,10 @@ func _ready() -> void:
 
 	if storm:
 		Sfx.start_rain(-8.0)
-	if not touch_mode:
-		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	elif snow:
+		Sfx.start_wind(-10.0)
+	# Snow deadens every gunshot.
+	Sfx.set_muffled(snow)
 	_update_camera(0.0)
 
 
@@ -149,6 +171,7 @@ func _exit_tree() -> void:
 	get_viewport().canvas_cull_mask = 0xFFFFFFFF
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	Sfx.stop_rain()
+	Sfx.set_muffled(false)
 
 
 func _build_world() -> void:
@@ -157,14 +180,14 @@ func _build_world() -> void:
 	add_child(_world)
 
 	_modulate = CanvasModulate.new()
-	_base_modulate = Color(0.74, 0.77, 0.86) if storm else Color.WHITE
+	_base_modulate = Color(0.74, 0.77, 0.86) if storm else (Color(0.9, 0.93, 1.0) if snow else Color.WHITE)
 	_modulate.color = _base_modulate
 	_world.add_child(_modulate)
 
 	var seed_base := _rng.randi()
 	for k in [Backdrop.Kind.SKY, Backdrop.Kind.CLOUDS, Backdrop.Kind.SKYLINE, Backdrop.Kind.TREES]:
 		var b := Backdrop.new()
-		b.setup(k, storm, seed_base + k)
+		b.setup(k, storm, seed_base + k, snow)
 		_world.add_child(b)
 		_backdrops.append(b)
 
@@ -178,15 +201,15 @@ func _build_world() -> void:
 	_place_bunnies()
 
 	var street := Street.new()
-	street.setup(storm, seed_base + 99)
+	street.setup(storm, seed_base + 99, snow)
 	_world.add_child(street)
 
 	_peds_root = Node2D.new()
 	_peds_root.y_sort_enabled = true
 	_world.add_child(_peds_root)
-	for i in (10 if storm else 15):
+	for i in (10 if storm else (12 if snow else 15)):
 		var p := Pedestrian.new()
-		p.setup(_rng.randf_range(0, L.WORLD_W), _rng, storm)
+		p.setup(_rng.randf_range(0, L.WORLD_W), _rng, storm, snow)
 		_peds_root.add_child(p)
 
 	_cars_root = Node2D.new()
@@ -224,7 +247,7 @@ func _generate_buildings(root: Node2D) -> void:
 		var sign_name := ""
 		if cols[i] >= 4 and _rng.randf() < 0.75:
 			sign_name = signs.pop_back()
-		b.setup(x, cols[i], _rng.randi_range(4, 10), _rng, sign_name, storm)
+		b.setup(x, cols[i], _rng.randi_range(4, 10), _rng, sign_name, storm or snow, snow)
 		root.add_child(b)
 		_buildings.append(b)
 		x += widths[i]
@@ -242,6 +265,7 @@ func _place_bunnies() -> void:
 		used[[b.get_instance_id(), idx]] = true
 		var bunny := Bunny.new()
 		bunny.setup(b, idx, _cfg.training, _rng)
+		bunny.snow = snow
 		var iv := GameState.shot_interval()
 		bunny.shot_timer = _rng.randf_range(iv.x * 0.6, iv.y * 0.75) + i * 1.8
 		_bunny_root.add_child(bunny)
@@ -263,6 +287,12 @@ func _process(delta: float) -> void:
 	_handle_scrolling(delta)
 	_update_camera(delta)
 	_modulate.color = _base_modulate.lerp(Color(1.25, 1.25, 1.35), _weather.flash * 0.6)
+	if _blur:
+		var amt: float = _weather.blur
+		_blur.visible = amt > 0.01
+		if _blur.visible:
+			_blur.size = Vector2(_view_w, L.PLAY_H)
+			(_blur.material as ShaderMaterial).set_shader_parameter("amount", amt)
 
 	match state:
 		State.INTRO:
@@ -322,10 +352,26 @@ func _aim_world() -> Vector2:
 
 
 func _begin_play() -> void:
+	# Let the level card fade completely before the scope and clock appear.
+	state = State.STARTING
+	_overlay.hide_intro(INTRO_FADE)
+	get_tree().create_timer(INTRO_FADE, false).timeout.connect(_go)
+
+
+func _go() -> void:
+	if state != State.STARTING:
+		return
 	state = State.PLAYING
-	_overlay.hide_intro()
+	_scope.visible = true
+	_apply_cursor()
 	_overlay.banner("GO!", UIKit.GREEN, 0.9)
 	Sfx.play("accept", -6.0)
+
+
+## The OS cursor is hidden while the scope is the pointer.
+func _apply_cursor() -> void:
+	var hidden := not touch_mode and state != State.INTRO and state != State.STARTING
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if hidden else Input.MOUSE_MODE_VISIBLE
 
 
 # ============================================================ shooting ===
@@ -483,6 +529,7 @@ func _start_limo() -> void:
 	_limo = Car.new()
 	_limo.setup(Car.Kind.LIMO, 1.0, _rng)
 	_limo.position.x = cam_left - 180.0
+	_limo.snow = snow
 	_limo.speed = 280.0
 	_cars_root.add_child(_limo)
 	_limo_target = cam_left + _view_w * 0.5
@@ -539,7 +586,7 @@ func _update_traffic(delta: float) -> void:
 		if c.position.x < -300.0 or c.position.x > L.WORLD_W + 300.0 \
 				or absf(c.position.x - (cam_left + _view_w * 0.5)) > _view_w * 2.5:
 			c.queue_free()
-	if state != State.PLAYING and state != State.INTRO:
+	if state != State.PLAYING and state != State.INTRO and state != State.STARTING:
 		return
 	_car_timer -= delta
 	if _car_timer > 0.0:
@@ -553,11 +600,12 @@ func _update_traffic(delta: float) -> void:
 	var car := Car.new()
 	car.setup([Car.Kind.SEDAN, Car.Kind.HATCH, Car.Kind.VAN, Car.Kind.TAXI][_rng.randi() % 4], dir, _rng)
 	car.position.x = x
+	car.snow = snow
 	_cars_root.add_child(car)
 
 
 func _update_ambience(delta: float) -> void:
-	if storm or state == State.LIMO:
+	if storm or snow or state == State.LIMO:
 		return
 	_bird_timer -= delta
 	if _bird_timer <= 0.0:
@@ -615,7 +663,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		if touch_mode:
 			touch_mode = false
-			Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+			_apply_cursor()
 		_mouse_inside = true
 		_aim = event.position
 	elif event is InputEventMouseButton and event.pressed and event.device != InputEvent.DEVICE_ID_EMULATION:
@@ -657,16 +705,16 @@ func _notification(what: int) -> void:
 		NOTIFICATION_WM_MOUSE_ENTER:
 			_mouse_inside = true
 		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
-			if is_inside_tree() and (state == State.PLAYING or state == State.INTRO):
+			if is_inside_tree() and state in [State.PLAYING, State.INTRO, State.STARTING]:
 				_set_paused(true)
 
 
 func _set_paused(p: bool) -> void:
-	if p and state != State.PLAYING and state != State.INTRO:
+	if p and not (state in [State.PLAYING, State.INTRO, State.STARTING]):
 		return
 	get_tree().paused = p
 	_overlay.show_pause(p)
 	if p:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	elif not touch_mode:
-		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	else:
+		_apply_cursor()

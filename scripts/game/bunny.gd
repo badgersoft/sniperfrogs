@@ -16,6 +16,7 @@ var shot_timer := 10.0
 var aiming := false
 var flash := 0.0
 var fur := Color.GRAY
+var snow := false
 var _t := 0.0
 
 
@@ -88,6 +89,8 @@ func _draw() -> void:
 		draw_circle(fp, 7.0 * flash, Color(1.0, 0.85, 0.3, flash))
 		draw_circle(fp, 3.5 * flash, Color(1, 1, 1, flash))
 	Building.draw_window_frame(self, r)
+	if snow:
+		Building.draw_window_snow(self, r)
 
 
 func _draw_rifle(hc: Vector2) -> void:

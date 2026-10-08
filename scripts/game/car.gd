@@ -15,6 +15,7 @@ var speed := 160.0
 var length := 96.0
 var paint := Color.RED
 var wrecked := false
+var snow := false
 var stopped := false
 var _wheel_rot := 0.0
 var _t := 0.0
@@ -88,6 +89,8 @@ func _draw() -> void:
 				draw_rect(Rect2(mid_x(cab_back, cab_front) - 6, -44, 12, 4), Color("#fff59d"))
 				for k in 6:
 					draw_rect(Rect2(-hl + 10 + k * 12, -18, 6, 3), Color("#212121"))
+	if snow and not wrecked:
+		_draw_roof_snow(hl)
 	if not wrecked:
 		draw_rect(Rect2(hl - 6, -21, 6, 5), Color("#fff9c4"))
 		draw_rect(Rect2(-hl, -21, 4, 5), Color("#e53935"))
@@ -96,6 +99,32 @@ func _draw() -> void:
 	var wheel_x := hl * 0.62 if kind != Kind.LIMO else hl * 0.8
 	for wx in [-wheel_x, wheel_x]:
 		_wheel(Vector2(wx, -8))
+
+
+func _draw_roof_snow(hl: float) -> void:
+	var x0 := 0.0
+	var x1 := 0.0
+	var y := 0.0
+	match kind:
+		Kind.VAN:
+			x0 = -hl
+			x1 = hl * 0.55
+			y = -44.0
+		Kind.LIMO:
+			x0 = -hl * 0.62
+			x1 = hl * 0.52
+			y = -40.0
+		_:
+			x0 = -hl * (0.62 if kind == Kind.HATCH else 0.45) + 8.0
+			x1 = hl * (0.3 if kind == Kind.HATCH else 0.22)
+			y = -39.0
+	var white := Color("#f4f7fa")
+	draw_rect(Rect2(x0, y - 4, x1 - x0, 4), white)
+	draw_circle(Vector2(x0 + 2, y - 2), 2, white)
+	draw_circle(Vector2(x1 - 2, y - 2), 2, white)
+	# A little on the bonnet and boot too.
+	draw_rect(Rect2(hl * 0.35, -26, hl * 0.55, 2), Color(white, 0.9))
+	draw_rect(Rect2(-hl + 3, -27, hl * 0.3, 2), Color(white, 0.9))
 
 
 func mid_x(a: float, b: float) -> float:

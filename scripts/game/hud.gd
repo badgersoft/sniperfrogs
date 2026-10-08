@@ -103,12 +103,12 @@ func _draw() -> void:
 	draw_string(title, Vector2(w - 18 - sw, y0 + 60), sc, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, UIKit.GOLD)
 
 	# --- Round pill + weather (top-left)
-	var stormy: bool = game.storm
-	var pill := "LEVEL %d/%d   %s" % [GameState.round_index + 1, GameState.ROUNDS.size(), "STORM" if stormy else "CLEAR"]
+	var wx: int = GameState.current_round().weather
+	var pill := "LEVEL %d/%d   %s" % [GameState.round_index + 1, GameState.ROUNDS.size(), GameState.weather_short(wx)]
 	var pw := title.get_string_size(pill, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 50
 	var pr := Rect2(12, 12, pw, 30)
 	draw_style_box(_pill_box(), pr)
-	_draw_weather_icon(Vector2(pr.end.x - 20, pr.position.y + 15), stormy)
+	_draw_weather_icon(Vector2(pr.end.x - 20, pr.position.y + 15), wx)
 	draw_string(title, Vector2(24, 33), pill, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UIKit.TEXT)
 
 	# --- Mini-map of the 3-screen street.
@@ -181,8 +181,14 @@ func _draw_bunny_icon(c: Vector2, dead: bool) -> void:
 		draw_line(c + Vector2(12, -14), c + Vector2(-12, 10), UIKit.RED, 3)
 
 
-func _draw_weather_icon(c: Vector2, stormy: bool) -> void:
-	if not stormy:
+func _draw_weather_icon(c: Vector2, weather: int) -> void:
+	if weather == GameState.Weather.SNOW:
+		for k in 3:
+			var a := k * PI / 3.0 + _t * 0.5
+			var d := Vector2(cos(a), sin(a)) * 9.0
+			draw_line(c - d, c + d, Color("#e3f2fd"), 2.0)
+		draw_circle(c, 2.0, Color("#e3f2fd"))
+	elif weather == GameState.Weather.CLEAR:
 		draw_circle(c, 6, Color("#ffd54f"))
 		for k in 8:
 			var a := k * TAU / 8.0 + _t

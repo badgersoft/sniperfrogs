@@ -39,9 +39,11 @@ var awning_color := Color.RED
 var windows: Array = []           # per-window decor dictionaries
 var broken := {}                  # window index -> {"blood": bool, "seed": int}
 var holes: Array[Vector2] = []    # local bullet holes
+var snow := false
 
 
-func setup(x: float, n_cols: int, n_floors: int, rng: RandomNumberGenerator, sign_name := "", storm := false) -> void:
+func setup(x: float, n_cols: int, n_floors: int, rng: RandomNumberGenerator, sign_name := "", storm := false, is_snow := false) -> void:
+	snow = is_snow
 	cols = n_cols
 	floors = n_floors
 	width = 2.0 * L.SIDE_MARGIN + cols * L.WIN_W + (cols - 1) * L.WIN_GAP
@@ -149,12 +151,41 @@ func _draw() -> void:
 			draw_broken_window(self, r, broken[i].blood, broken[i].seed)
 		else:
 			_draw_window(r, windows[i])
+	if snow:
+		_draw_snow()
 	for h in holes:
 		draw_circle(h, 2.6, Color(0.1, 0.08, 0.08))
 		draw_circle(h + Vector2(-0.6, -0.6), 1.2, Color(0, 0, 0))
 		for k in 4:
 			var a := k * 1.7 + h.x
 			draw_line(h, h + Vector2(cos(a), sin(a)) * 5.0, Color(0, 0, 0, 0.35), 1.0)
+
+
+const SNOW := Color("#f4f7fa")
+
+
+func _draw_snow() -> void:
+	var top := -height
+	# Thick cap along the cornice with a lumpy top edge.
+	draw_rect(Rect2(-6, top - 9, width + 12, 6), SNOW)
+	var x := -4.0
+	while x < width + 4:
+		draw_circle(Vector2(x, top - 9), 3.5, SNOW)
+		x += 9.0
+	# A dusting on every floor ledge and window sill.
+	for f in floors + 1:
+		var y := -(L.GROUND_H + f * L.FLOOR_H)
+		draw_rect(Rect2(0, y - 4, width, 2), Color(SNOW, 0.85))
+	for i in window_count():
+		draw_window_snow(self, window_local_rect(i))
+	if awning:
+		draw_rect(Rect2(width * 0.5 - 30, -54 - 3, 60, 3), SNOW)
+
+
+static func draw_window_snow(ci: CanvasItem, r: Rect2) -> void:
+	ci.draw_rect(Rect2(r.position.x - 4, r.end.y - 1.5, r.size.x + 8, 2.5), SNOW)
+	ci.draw_circle(Vector2(r.position.x + 4, r.end.y - 1.2), 1.8, SNOW)
+	ci.draw_circle(Vector2(r.end.x - 6, r.end.y - 1.0), 1.5, SNOW)
 
 
 func _draw_roof(top: float) -> void:

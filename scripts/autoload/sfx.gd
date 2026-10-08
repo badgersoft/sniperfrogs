@@ -5,6 +5,7 @@ extends Node
 
 const RATE := 22050
 const POOL_SIZE := 14
+const WORLD_BUS := "World"
 
 var _streams := {}
 var _pool: Array[AudioStreamPlayer] = []
@@ -18,8 +19,10 @@ var _rng := RandomNumberGenerator.new()
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_rng.seed = 2006
+	_make_world_bus()
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer.new()
+		p.bus = WORLD_BUS
 		add_child(p)
 		_pool.append(p)
 	_rain_player = AudioStreamPlayer.new()
@@ -29,6 +32,7 @@ func _ready() -> void:
 		p2.max_distance = 5000.0
 		p2.attenuation = 0.6
 		p2.panning_strength = 1.6
+		p2.bus = WORLD_BUS
 		add_child(p2)
 		_pool_2d.append(p2)
 	_build_all()
@@ -65,6 +69,35 @@ func play_varied(sound: String, volume_db := 0.0, spread := 0.06) -> AudioStream
 	return play(sound, volume_db, 1.0 + _rng.randf_range(-spread, spread))
 
 
+## Snow deadens sound: a low-pass on the World bus muffles every shot.
+func set_muffled(on: bool) -> void:
+	var bus := AudioServer.get_bus_index(WORLD_BUS)
+	if bus < 0:
+		return
+	AudioServer.set_bus_effect_enabled(bus, 0, on)
+	AudioServer.set_bus_volume_db(bus, -3.0 if on else 0.0)
+
+
+func start_wind(volume_db := -10.0) -> void:
+	_rain_player.stream = _streams["wind"]
+	_rain_player.volume_db = volume_db
+	_rain_player.play()
+
+
+func _make_world_bus() -> void:
+	if AudioServer.get_bus_index(WORLD_BUS) >= 0:
+		return
+	AudioServer.add_bus()
+	var idx := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(idx, WORLD_BUS)
+	AudioServer.set_bus_send(idx, "Master")
+	var lp := AudioEffectLowPassFilter.new()
+	lp.cutoff_hz = 750.0
+	lp.resonance = 0.4
+	AudioServer.add_bus_effect(idx, lp, 0)
+	AudioServer.set_bus_effect_enabled(idx, 0, false)
+
+
 func start_rain(volume_db := -9.0) -> void:
 	_rain_player.stream = _streams["rain"]
 	_rain_player.volume_db = volume_db
@@ -94,6 +127,7 @@ func _build_all() -> void:
 	_streams["player_hit"] = _make(_synth_player_hit())
 	_streams["thunder"] = _make(_synth_thunder())
 	_streams["rain"] = _make(_synth_rain(), true)
+	_streams["wind"] = _make(_synth_wind(), true)
 	_streams["explosion"] = _make(_synth_explosion())
 	_streams["type"] = _make(_synth_type())
 	_streams["beep"] = _make(_synth_tone(880.0, 0.07, 0.25, true))
@@ -460,4 +494,28 @@ func _synth_ping() -> PackedFloat32Array:
 		phase += TAU * f / RATE
 		b[i] = sin(phase) * exp(-t / 0.18) * 0.5
 	_add_crack(b, 0.0, 0.7, 0.006)
+	return b
+
+
+func _synth_wind() -> PackedFloat32Array:
+	# Cold wind for snow levels: slowly swelling low-passed noise.
+	var length := 4.0
+	var b := _buf(length)
+	var lp := 0.0
+	var lp2 := 0.0
+	for i in b.size():
+		var t := float(i) / RATE
+		var x := _rng.randf_range(-1.0, 1.0)
+		var fc := 500.0 + 350.0 * sin(TAU * t / length) + 150.0 * sin(TAU * 3.0 * t / length)
+		lp += _lp_coeff(fc) * (x - lp)
+		lp2 += _lp_coeff(120.0) * (x - lp2)
+		var swell := 0.6 + 0.4 * sin(TAU * 2.0 * t / length + 1.0)
+		b[i] = (lp - lp2 * 0.5) * swell
+	# Crossfade the ends so the loop is seamless.
+	var fade := int(0.2 * RATE)
+	for i in fade:
+		var w := float(i) / fade
+		var j := b.size() - fade + i
+		b[i] = b[i] * w + b[j] * (1.0 - w)
+	b.resize(b.size() - fade)
 	return b

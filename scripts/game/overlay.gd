@@ -199,16 +199,15 @@ func show_intro(cfg: Dictionary) -> void:
 	grid.add_theme_constant_override("h_separation", 60)
 	grid.add_theme_constant_override("v_separation", 4)
 	v.add_child(grid)
-	var stormy: bool = cfg.weather == GameState.Weather.STORM
 	var rows := [
 		["Snipers detected", str(cfg.snipers)],
 		["Bullets", str(GameState.BULLETS_PER_ROUND)],
 		["Time", "%d seconds" % int(GameState.ROUND_TIME)],
 		["Health", "%d%%" % GameState.health],
-		["Weather", "STORMY" if stormy else "SUNNY"],
+		["Weather", GameState.weather_name(cfg.weather)],
 		["Sniper training", GameState.training_name(cfg.training).to_upper()],
 	]
-	if cfg.has("shot_interval"):
+	if cfg.has("shot_rate"):
 		rows.append(["Warning", "RAPID FIRE"])
 	for r in rows:
 		grid.add_child(UIKit.label(r[0], 22, UIKit.TEXT_DIM))
@@ -227,12 +226,12 @@ func _center_intro() -> void:
 		_intro.position = Vector2((size.x - _intro.size.x) * 0.5, (L.PLAY_H - _intro.size.y) * 0.45)
 
 
-func hide_intro() -> void:
+func hide_intro(fade := 0.3) -> void:
 	if _intro:
 		var p := _intro
 		_intro = null
 		var tw := create_tween()
-		tw.tween_property(p, "modulate:a", 0.0, 0.3)
+		tw.tween_property(p, "modulate:a", 0.0, fade)
 		tw.tween_callback(p.queue_free)
 
 

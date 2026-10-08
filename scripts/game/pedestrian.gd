@@ -22,6 +22,8 @@ var hair := Color.BLACK
 var extra := Extra.NONE
 var extra_color := Color.RED
 var dress := false
+var has_scarf := false
+var scarf := Color.RED
 var tall := 1.0
 var flee_time := 0.0
 var _t := 0.0
@@ -30,7 +32,7 @@ var _pause := 0.0
 var _rng: RandomNumberGenerator
 
 
-func setup(x: float, rng: RandomNumberGenerator, storm: bool) -> void:
+func setup(x: float, rng: RandomNumberGenerator, storm: bool, snow := false) -> void:
 	_rng = rng
 	position = Vector2(x, rng.randf_range(L.SIDEWALK_TOP + 14, L.SIDEWALK_BOTTOM - 7))
 	dir = -1.0 if rng.randf() < 0.5 else 1.0
@@ -42,7 +44,13 @@ func setup(x: float, rng: RandomNumberGenerator, storm: bool) -> void:
 	dress = rng.randf() < 0.25
 	tall = rng.randf_range(0.9, 1.1)
 	_t = rng.randf() * 10.0
-	if storm and rng.randf() < 0.75:
+	if snow:
+		# Wrapped up for winter: woolly hats and scarves.
+		scarf = SHIRTS[rng.randi() % SHIRTS.size()]
+		has_scarf = true
+		extra = [Extra.HAT, Extra.HAT, Extra.BAG, Extra.BRIEFCASE][rng.randi() % 4]
+		extra_color = SHIRTS[rng.randi() % SHIRTS.size()]
+	elif storm and rng.randf() < 0.75:
 		extra = Extra.UMBRELLA
 		extra_color = UMBRELLAS[rng.randi() % UMBRELLAS.size()]
 	else:
@@ -126,6 +134,9 @@ func _draw() -> void:
 	else:
 		draw_rect(Rect2(shoulder.x - 4.5, shoulder.y - 1, 9, hip.y - shoulder.y + 3), shirt)
 		draw_rect(Rect2(hip.x - 4.5, hip.y - 1, 9, 2), pants.darkened(0.3))
+	if has_scarf:
+		draw_rect(Rect2(shoulder.x - 4.5, shoulder.y - 2.5, 9, 3), scarf)
+		draw_line(shoulder + Vector2(-3, 0), shoulder + Vector2(-6, 7), scarf, 2.0)
 	# Front arm + accessory.
 	var arm_b := swing * 0.9
 	if flee_time > 0.0:

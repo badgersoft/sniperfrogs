@@ -9,6 +9,7 @@ enum Kind { SKY, CLOUDS, SKYLINE, TREES }
 
 var kind := Kind.SKY
 var storm := false
+var snow := false
 var view_w := 1280.0
 var parallax := 0.0
 var _clouds: Array = []
@@ -16,9 +17,10 @@ var _rng := RandomNumberGenerator.new()
 var _seed := 0
 
 
-func setup(k: int, is_storm: bool, seed_value: int) -> void:
+func setup(k: int, is_storm: bool, seed_value: int, is_snow := false) -> void:
 	kind = k
 	storm = is_storm
+	snow = is_snow
 	_seed = seed_value
 	_rng.seed = seed_value
 	match kind:
@@ -27,7 +29,7 @@ func setup(k: int, is_storm: bool, seed_value: int) -> void:
 		Kind.SKYLINE: parallax = L.PARALLAX_SKYLINE
 		Kind.TREES: parallax = L.PARALLAX_TREES
 	if kind == Kind.CLOUDS:
-		var n := 16 if storm else 6
+		var n := 16 if storm else (11 if snow else 6)
 		for i in n:
 			_clouds.append(_make_cloud(_rng.randf_range(-300, 2600)))
 
@@ -77,12 +79,22 @@ func _draw_sky() -> void:
 	var top := Color("#2f7fe8") if not storm else Color("#3e4652")
 	var mid := Color("#79b8ff") if not storm else Color("#5d6672")
 	var hor := Color("#d6f0ff") if not storm else Color("#8a929c")
+	if snow:
+		top = Color("#8c98a6")
+		mid = Color("#b8c2cc")
+		hor = Color("#e4e9ee")
 	var w := view_w + 4
 	draw_polygon(PackedVector2Array([Vector2(-2, 0), Vector2(w, 0), Vector2(w, 260), Vector2(-2, 260)]),
 		PackedColorArray([top, top, mid, mid]))
 	draw_polygon(PackedVector2Array([Vector2(-2, 260), Vector2(w, 260), Vector2(w, L.PLAY_H), Vector2(-2, L.PLAY_H)]),
 		PackedColorArray([mid, mid, hor, hor]))
-	if not storm:
+	if snow:
+		# A weak winter sun behind the overcast.
+		var ws := Vector2(view_w * 0.8, 110)
+		for k in 4:
+			draw_circle(ws, 70.0 - k * 14.0, Color(1, 1, 1, 0.06))
+		draw_circle(ws, 24, Color(1, 1, 1, 0.35))
+	elif not storm:
 		var sun := Vector2(view_w * 0.84, 92)
 		for k in 6:
 			draw_circle(sun, 120.0 - k * 16.0, Color(1.0, 0.97, 0.75, 0.05))
@@ -93,6 +105,8 @@ func _draw_sky() -> void:
 func _draw_clouds() -> void:
 	for c in _clouds:
 		var base := Color(1, 1, 1) if not storm else Color(0.48, 0.5, 0.55)
+		if snow:
+			base = Color(0.8, 0.82, 0.86)
 		var shade := base.darkened(0.18 + c.shade)
 		var p: Vector2 = c.pos
 		for pf in c.puffs:
@@ -105,6 +119,8 @@ func _draw_clouds() -> void:
 
 func _draw_skyline() -> void:
 	var col := Color("#a7c7e3") if not storm else Color("#6f7782")
+	if snow:
+		col = Color("#aab4be")
 	var win := Color(1, 1, 1, 0.25) if not storm else Color(1.0, 0.9, 0.6, 0.25)
 	var x := -50.0
 	var limit := L.WORLD_W * parallax + 2600.0
@@ -115,6 +131,8 @@ func _draw_skyline() -> void:
 		draw_rect(r, col)
 		if _rng.randf() < 0.3:
 			draw_line(Vector2(x + w * 0.5, r.position.y), Vector2(x + w * 0.5, r.position.y - 30), col, 3)
+		if snow:
+			draw_rect(Rect2(x, r.position.y - 3, w, 5), Color("#eef2f6"))
 		var wy := r.position.y + 10
 		while wy < L.BASE_Y - 20:
 			var wx := x + 8
@@ -129,9 +147,14 @@ func _draw_skyline() -> void:
 func _draw_trees() -> void:
 	var limit := L.WORLD_W + 200.0
 	# Grass bank at the base.
-	draw_rect(Rect2(-100, L.BASE_Y - 30, limit + 200, 32), Color("#4f8f3a") if not storm else Color("#3d6a32"))
+	var bank := Color("#4f8f3a") if not storm else Color("#3d6a32")
+	if snow:
+		bank = Color("#f2f6fa")
+	draw_rect(Rect2(-100, L.BASE_Y - 30, limit + 200, 32), bank)
 	var x := -80.0
 	var greens := [Color("#2f7d32"), Color("#3f9a3c"), Color("#4caf50"), Color("#2a6b2c")]
+	if snow:
+		greens = [Color("#2d5a3a"), Color("#33664a"), Color("#3b6e4f"), Color("#284f34")]
 	while x < limit:
 		var h := _rng.randf_range(70, 125)
 		var r := _rng.randf_range(24, 40)
@@ -144,4 +167,10 @@ func _draw_trees() -> void:
 		draw_circle(top + Vector2(0, r * 0.2), r, g)
 		draw_circle(top + Vector2(-r * 0.3, -r * 0.1), r * 0.55, g.lightened(0.15))
 		draw_circle(top + Vector2(r * 0.25, r * 0.6), r * 0.6, g.darkened(0.08))
+		if snow:
+			# Snow settled on the upper crown.
+			var sw := Color("#f2f6fa")
+			draw_circle(top + Vector2(-r * 0.15, -r * 0.45), r * 0.55, sw)
+			draw_circle(top + Vector2(r * 0.35, -r * 0.25), r * 0.4, sw)
+			draw_circle(top + Vector2(-r * 0.65, r * 0.05), r * 0.35, sw)
 		x += _rng.randf_range(34, 70)

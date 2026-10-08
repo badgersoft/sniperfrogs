@@ -6,6 +6,7 @@ const CRT := preload("res://shaders/crt.gdshader")
 
 const CHAR_TIME := 0.032
 const FONT_SIZE := 26
+const HOLD_AFTER_DEPLOY := 2.0
 
 var main: Node
 var _lines: Array[String] = []
@@ -90,18 +91,36 @@ func _unhandled_input(event: InputEvent) -> void:
 			_skip()
 
 
-## Deploy immediately, whatever point the briefing has reached.
+## Deploy. Before the Y/N prompt this cuts straight to the game; at the
+## prompt the link closes on screen and holds for HOLD_AFTER_DEPLOY so the
+## "connection terminated" sign-off can be read.
 func _skip() -> void:
 	if _skipped or _aborted:
 		return
 	_skipped = true
 	_hint = ""
-	if _waiting_answer:
-		_typing += "Y"
-	_commit()
-	_typing = "...connection terminated."
+	var at_prompt := _waiting_answer
+	_waiting_answer = false
 	Sfx.play("accept", -4.0)
-	main.goto("game", 0.4)
+	if not at_prompt:
+		_commit()
+		_typing = "...connection terminated."
+		main.goto("game", 0.4)
+		return
+	_typing += "Y"
+	_commit()
+	await get_tree().create_timer(0.35).timeout
+	var msg := "...connection terminated."
+	for i in msg.length():
+		if not is_inside_tree():
+			return
+		_typing = msg.substr(0, i + 1)
+		if i % 2 == 0:
+			Sfx.play_varied("type", -10.0, 0.15)
+		await get_tree().create_timer(CHAR_TIME).timeout
+	await get_tree().create_timer(HOLD_AFTER_DEPLOY).timeout
+	if is_inside_tree():
+		main.goto("game", 0.5)
 
 
 func _answer(yes: bool) -> void:
@@ -178,7 +197,7 @@ func _run() -> void:
 		GameState.Training.MEDIUM: "medium trained",
 		GameState.Training.EXPERT: "expertly trained",
 	}[cfg.training]
-	var weather := "good. Clear skies." if cfg.weather == GameState.Weather.CLEAR else "bad. Storms and lightning."
+	var weather := GameState.weather_phrase(cfg.weather)
 
 	# Idle blinking cursor before the link wakes up.
 	if not await _wait(2.0):
