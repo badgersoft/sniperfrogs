@@ -3,7 +3,7 @@ shader_type canvas_item;
 // on top of the terminal, so it only darkens - no screen texture read needed.
 
 uniform float scan_strength = 0.22;
-uniform float vignette = 0.85;
+uniform float vignette = 0.7;
 
 void fragment() {
 	vec2 uv = UV;

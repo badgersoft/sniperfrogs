@@ -47,9 +47,12 @@ func _draw() -> void:
 	var top := 70.0
 	# Header bar.
 	var r := GameState.round_index + 1
-	draw_string(font, Vector2(x, 38), "frog@hq:~$ secure_link --level %d/%d" % [r, GameState.ROUNDS.size()],
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(UIKit.TERMINAL, 0.45))
-	draw_line(Vector2(x, 50), Vector2(size.x - x, 50), Color(UIKit.TERMINAL, 0.2), 1)
+	var header := "frog@hq:~$ secure_link --level %d/%d" % [r, GameState.ROUNDS.size()]
+	# Faint header bar so the link line stands out from the CRT vignette.
+	draw_rect(Rect2(x - 12, 14, size.x - 2 * x + 24, 36), Color(UIKit.TERMINAL, 0.07))
+	draw_string(font, Vector2(x, 40) + Vector2(0, 1), header, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(UIKit.TERMINAL, 0.3))
+	draw_string(font, Vector2(x, 40), header, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UIKit.TERMINAL.lightened(0.15))
+	draw_line(Vector2(x, 52), Vector2(size.x - x, 52), Color(UIKit.TERMINAL, 0.35), 1)
 
 	var max_lines := int((size.y - top - 80) / line_h)
 	var all: Array[String] = _lines.duplicate()
@@ -193,9 +196,9 @@ func _run() -> void:
 	var cfg := GameState.current_round()
 	var n: int = cfg.snipers
 	var trained: String = {
-		GameState.Training.LOW: "low-level trained",
-		GameState.Training.MEDIUM: "medium trained",
-		GameState.Training.EXPERT: "expertly trained",
+		GameState.Training.LOW: "low skilled",
+		GameState.Training.MEDIUM: "medium skilled",
+		GameState.Training.EXPERT: "highly skilled",
 	}[cfg.training]
 	var weather := GameState.weather_phrase(cfg.weather)
 
@@ -212,8 +215,8 @@ func _run() -> void:
 	var script_lines := [
 		"...Operation initiated.",
 		"...Protect the president.",
-		"...%d %s believed to be in location." % [n, "Sniper" if n == 1 else "Snipers"],
-		"...They are %s." % trained,
+		"...%d %s believed to be in the vicinity." % [n, "sniper" if n == 1 else "snipers"],
+		"...Our informant tells us %s %s." % ["the sniper is" if n == 1 else "the snipers are", trained],
 		"...The weather is %s" % weather,
 	]
 	if GameState.is_last_round():
