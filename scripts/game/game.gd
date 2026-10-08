@@ -85,7 +85,7 @@ func _ready() -> void:
 	storm = _cfg.weather == GameState.Weather.STORM
 	bullets = GameState.BULLETS_PER_ROUND
 	time_left = GameState.ROUND_TIME
-	health = GameState.START_HEALTH
+	health = GameState.health
 	snipers_total = _cfg.snipers
 	GameState.round_start_score = GameState.score
 	touch_mode = GameState.is_touch()
@@ -242,7 +242,8 @@ func _place_bunnies() -> void:
 		used[[b.get_instance_id(), idx]] = true
 		var bunny := Bunny.new()
 		bunny.setup(b, idx, _cfg.training, _rng)
-		bunny.shot_timer = _rng.randf_range(6.0, 15.0) + i * 2.5
+		var iv := GameState.shot_interval()
+		bunny.shot_timer = _rng.randf_range(iv.x * 0.6, iv.y * 0.75) + i * 1.8
 		_bunny_root.add_child(bunny)
 		bunnies.append(bunny)
 
@@ -423,7 +424,8 @@ func _update_bunnies(delta: float) -> void:
 		b.shot_timer -= delta
 		b.aiming = b.shot_timer < 1.3
 		if b.shot_timer <= 0.0:
-			b.shot_timer = _rng.randf_range(GameState.BUNNY_SHOT_INTERVAL.x, GameState.BUNNY_SHOT_INTERVAL.y)
+			var iv := GameState.shot_interval()
+			b.shot_timer = _rng.randf_range(iv.x, iv.y)
 			_bunny_fires(b)
 
 
@@ -565,6 +567,8 @@ func _update_ambience(delta: float) -> void:
 
 # ========================================================== round end ===
 func _finish_round_won() -> void:
+	GameState.health = int(health)
+	var boost := GameState.apply_health_boost()
 	GameState.last_round = {
 		"round": GameState.round_index + 1,
 		"snipers": snipers_total,
@@ -575,6 +579,7 @@ func _finish_round_won() -> void:
 		"time_left": int(ceil(time_left)),
 		"bullets_left": bullets,
 		"health": int(health),
+		"health_boost": boost,
 	}
 	state = State.DONE    # freeze while fading out
 	main.goto("round_end", 0.6)

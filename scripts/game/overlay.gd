@@ -190,7 +190,8 @@ func show_intro(cfg: Dictionary) -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
 	_intro.add_child(v)
-	var title := UIKit.label("ROUND %d" % (GameState.round_index + 1), 48, UIKit.GREEN, UIKit.title_font())
+	var title_text := "FINAL LEVEL %d" if GameState.is_last_round() else "LEVEL %d"
+	var title := UIKit.label(title_text % (GameState.round_index + 1), 48, UIKit.GREEN, UIKit.title_font())
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
 	var grid := GridContainer.new()
@@ -203,10 +204,12 @@ func show_intro(cfg: Dictionary) -> void:
 		["Snipers detected", str(cfg.snipers)],
 		["Bullets", str(GameState.BULLETS_PER_ROUND)],
 		["Time", "%d seconds" % int(GameState.ROUND_TIME)],
-		["Health", "%d%%" % GameState.START_HEALTH],
+		["Health", "%d%%" % GameState.health],
 		["Weather", "STORMY" if stormy else "SUNNY"],
 		["Sniper training", GameState.training_name(cfg.training).to_upper()],
 	]
+	if cfg.has("shot_interval"):
+		rows.append(["Warning", "RAPID FIRE"])
 	for r in rows:
 		grid.add_child(UIKit.label(r[0], 22, UIKit.TEXT_DIM))
 		var val := UIKit.label(r[1], 22, UIKit.GOLD, UIKit.title_font())

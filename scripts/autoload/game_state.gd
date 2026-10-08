@@ -21,28 +21,40 @@ const CIVILIAN_PENALTY_MIN := 1000
 const CIVILIAN_PENALTY_MAX := 5000
 const TIME_BONUS_PER_SECOND := 500
 const BUNNY_SHOT_INTERVAL := Vector2(10.0, 20.0)
+## Health carries over between levels; after every HEALTH_BOOST_EVERY levels
+## the frog gets HEALTH_BOOST_FRACTION of their current health back (rounded
+## down, capped at START_HEALTH).
+const HEALTH_BOOST_EVERY := 3
+const HEALTH_BOOST_FRACTION := 0.25
 
-enum Training { LOW, MEDIUM, HIGH }
+enum Training { LOW, MEDIUM, EXPERT }
 enum Weather { CLEAR, STORM }
 
 ## Probability that a bunny sniper MISSES the frog for each training level.
 const MISS_CHANCE := {
 	Training.LOW: 0.75,
 	Training.MEDIUM: 0.5,
-	Training.HIGH: 0.25,
+	Training.EXPERT: 0.25,
 }
 
-## The campaign, exactly as briefed.
+## The campaign: one entry per level. "shot_interval" (optional) overrides
+## BUNNY_SHOT_INTERVAL for that level.
 const ROUNDS := [
-	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.LOW},
-	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.LOW},
-	{"snipers": 3, "weather": Weather.CLEAR, "training": Training.LOW},
-	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.MEDIUM},
-	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.MEDIUM},
-	{"snipers": 3, "weather": Weather.STORM, "training": Training.LOW},
-	{"snipers": 1, "weather": Weather.STORM, "training": Training.HIGH},
-	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.HIGH},
-	{"snipers": 3, "weather": Weather.STORM, "training": Training.HIGH},
+	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.LOW},       # 1
+	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.LOW},       # 2
+	{"snipers": 3, "weather": Weather.CLEAR, "training": Training.LOW},       # 3
+	{"snipers": 4, "weather": Weather.CLEAR, "training": Training.LOW},       # 4
+	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.MEDIUM},    # 5
+	{"snipers": 2, "weather": Weather.CLEAR, "training": Training.MEDIUM},    # 6
+	{"snipers": 3, "weather": Weather.STORM, "training": Training.MEDIUM},    # 7
+	{"snipers": 4, "weather": Weather.STORM, "training": Training.MEDIUM},    # 8
+	{"snipers": 1, "weather": Weather.CLEAR, "training": Training.EXPERT},    # 9
+	{"snipers": 2, "weather": Weather.STORM, "training": Training.EXPERT},    # 10
+	{"snipers": 3, "weather": Weather.CLEAR, "training": Training.EXPERT},    # 11
+	{"snipers": 4, "weather": Weather.STORM, "training": Training.EXPERT},    # 12
+	# Final level: McWhurter's elite, firing far more often.
+	{"snipers": 6, "weather": Weather.STORM, "training": Training.EXPERT,
+		"shot_interval": Vector2(6.0, 11.0)},                                 # 13
 ]
 
 const HIGHSCORE_PATH := "user://honourable_roll_call.cfg"
@@ -59,6 +71,7 @@ const DEFAULT_HIGHSCORES := [
 var round_index := 0              # 0-based index into ROUNDS
 var score := 0                    # running total for the campaign
 var round_start_score := 0
+var health := START_HEALTH        # carried from level to level
 
 ## Result of the most recently played round, filled in by the game screen.
 var last_round := {}
@@ -77,6 +90,7 @@ func new_game() -> void:
 	round_index = 0
 	score = 0
 	round_start_score = 0
+	health = START_HEALTH
 	last_round = {}
 	game_over_reason = ""
 
@@ -89,6 +103,21 @@ func is_last_round() -> bool:
 	return round_index >= ROUNDS.size() - 1
 
 
+func shot_interval() -> Vector2:
+	return current_round().get("shot_interval", BUNNY_SHOT_INTERVAL)
+
+
+## Call once when the current level is won. Every HEALTH_BOOST_EVERY levels
+## the frog is patched up by 25% of their current health (rounded down).
+## Returns the amount added.
+func apply_health_boost() -> int:
+	if (round_index + 1) % HEALTH_BOOST_EVERY != 0 or is_last_round():
+		return 0
+	var boost := mini(int(floor(health * HEALTH_BOOST_FRACTION)), START_HEALTH - health)
+	health += boost
+	return boost
+
+
 ## Civilian penalties can push the running score below zero.
 func add_score(amount: int) -> void:
 	score += amount
@@ -98,7 +127,7 @@ func training_name(t: int) -> String:
 	match t:
 		Training.LOW: return "low"
 		Training.MEDIUM: return "medium"
-		_: return "high"
+		_: return "expert"
 
 
 func training_adverb(t: int) -> String:

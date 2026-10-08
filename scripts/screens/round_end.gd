@@ -38,7 +38,7 @@ func _ready() -> void:
 	v.add_theme_constant_override("separation", 10)
 	panel.add_child(v)
 
-	var head := UIKit.label("ROUND %d COMPLETE" % int(r.get("round", 1)), 46, UIKit.GREEN, UIKit.title_font())
+	var head := UIKit.label("LEVEL %d COMPLETE" % int(r.get("round", 1)), 46, UIKit.GREEN, UIKit.title_font())
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(head)
 	var sub := UIKit.label("The President lives to govern another day.", 19, UIKit.TEXT_DIM)
@@ -55,7 +55,10 @@ func _ready() -> void:
 	_row(grid, "Snipers eliminated  (%d x 10,000)" % kills, "+" + Hud._fmt(int(r.get("kill_points", 0))), UIKit.GREEN)
 	var civ := int(r.get("civilians", 0))
 	_row(grid, "Civilian casualties  (%d)" % civ, ("-" + Hud._fmt(int(r.get("penalty", 0)))) if civ > 0 else "0", UIKit.RED if civ > 0 else UIKit.TEXT)
-	_row(grid, "Health remaining", "%d%%" % int(r.get("health", 100)), UIKit.TEXT)
+	var boost := int(r.get("health_boost", 0))
+	_row(grid, "Health carried forward", "%d%%" % int(r.get("health", 100)), UIKit.TEXT)
+	if boost > 0:
+		_row(grid, "Field medic boost  (every 3 levels)", "+%d%%  ->  %d%%" % [boost, GameState.health], UIKit.GREEN)
 	_row(grid, "Bullets remaining", str(int(r.get("bullets_left", 0))), UIKit.TEXT)
 	_time_val = _row(grid, "Seconds left on the clock", "%ds" % _secs, UIKit.TEXT)
 	_bonus_val = _row(grid, "Time bonus  (500 / second)", "+0", UIKit.GOLD)

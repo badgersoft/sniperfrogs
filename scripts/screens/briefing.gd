@@ -46,7 +46,7 @@ func _draw() -> void:
 	var top := 70.0
 	# Header bar.
 	var r := GameState.round_index + 1
-	draw_string(font, Vector2(x, 38), "frog@hq:~$ secure_link --round %d/%d" % [r, GameState.ROUNDS.size()],
+	draw_string(font, Vector2(x, 38), "frog@hq:~$ secure_link --level %d/%d" % [r, GameState.ROUNDS.size()],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(UIKit.TERMINAL, 0.45))
 	draw_line(Vector2(x, 50), Vector2(size.x - x, 50), Color(UIKit.TERMINAL, 0.2), 1)
 
@@ -132,6 +132,39 @@ func _type_line(text: String) -> bool:
 	return true
 
 
+## Types `text` as scrambled cipher characters, then resolves it left to
+## right into plain text while the unresolved tail keeps scrambling.
+func _decode_line(text: String) -> bool:
+	const CIPHER := "#$%&*@!?<>/\\|=+~0123456789ABCDEFXZ"
+	var scrambled := ""
+	for i in text.length():
+		scrambled += " " if text[i] == " " else CIPHER[_rng.randi() % CIPHER.length()]
+	# Cipher text streams in.
+	for i in text.length():
+		_typing = scrambled.substr(0, i + 1)
+		if i % 2 == 0:
+			Sfx.play_varied("type", -12.0, 0.3)
+		if not await _wait(0.012):
+			return false
+	if not await _wait(0.35):
+		return false
+	# Decrypt.
+	var resolved := 0
+	while resolved < text.length():
+		resolved = mini(text.length(), resolved + 1)
+		var line := text.substr(0, resolved)
+		for i in range(resolved, text.length()):
+			line += " " if text[i] == " " else CIPHER[_rng.randi() % CIPHER.length()]
+		_typing = line
+		if resolved % 3 == 0:
+			Sfx.play_varied("tick", -16.0, 0.2)
+		if not await _wait(0.03):
+			return false
+	_typing = text
+	Sfx.play("accept", -10.0)
+	return true
+
+
 func _commit() -> void:
 	_lines.append(_typing)
 	_typing = ""
@@ -143,12 +176,19 @@ func _run() -> void:
 	var trained: String = {
 		GameState.Training.LOW: "low-level trained",
 		GameState.Training.MEDIUM: "medium trained",
-		GameState.Training.HIGH: "highly trained",
+		GameState.Training.EXPERT: "expertly trained",
 	}[cfg.training]
 	var weather := "good. Clear skies." if cfg.weather == GameState.Weather.CLEAR else "bad. Storms and lightning."
 
 	# Idle blinking cursor before the link wakes up.
-	if not await _wait(2.4):
+	if not await _wait(2.0):
+		return
+	# Coded clearance message: arrives as cipher text, then decrypts.
+	var level := GameState.round_index + 1
+	if not await _decode_line("...Level %d clearance granted." % level):
+		return
+	_commit()
+	if not await _wait(0.5):
 		return
 	var script_lines := [
 		"...Operation initiated.",
@@ -157,6 +197,9 @@ func _run() -> void:
 		"...They are %s." % trained,
 		"...The weather is %s" % weather,
 	]
+	if GameState.is_last_round():
+		script_lines.insert(1, "...FINAL OPERATION. McWhurter's elite are in position.")
+		script_lines.append("...Expect rapid fire.")
 	for l in script_lines:
 		if not await _type_line(l):
 			return

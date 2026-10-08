@@ -104,7 +104,7 @@ func _draw() -> void:
 
 	# --- Round pill + weather (top-left)
 	var stormy: bool = game.storm
-	var pill := "ROUND %d/%d   %s" % [GameState.round_index + 1, GameState.ROUNDS.size(), "STORM" if stormy else "CLEAR"]
+	var pill := "LEVEL %d/%d   %s" % [GameState.round_index + 1, GameState.ROUNDS.size(), "STORM" if stormy else "CLEAR"]
 	var pw := title.get_string_size(pill, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 50
 	var pr := Rect2(12, 12, pw, 30)
 	draw_style_box(_pill_box(), pr)

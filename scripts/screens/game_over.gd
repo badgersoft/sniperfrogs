@@ -42,7 +42,7 @@ func _ready() -> void:
 			sub = "Bunny McWhurter's snipers got to you first. The President is on their own."
 		_:
 			title = "MISSION FAILED"
-			sub = "The presidential limousine has been destroyed. The Bunnies have won this round."
+			sub = "The presidential limousine has been destroyed. The Bunnies have won this level."
 	var t := UIKit.label(title, 50, UIKit.GOLD if won else UIKit.RED, UIKit.title_font())
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.add_theme_constant_override("outline_size", 10)
@@ -54,7 +54,7 @@ func _ready() -> void:
 	s.custom_minimum_size.x = 560
 	_box.add_child(s)
 
-	var info := UIKit.label("Reached round %d of %d" % [GameState.round_index + 1, GameState.ROUNDS.size()], 20, UIKit.TEXT)
+	var info := UIKit.label("Reached level %d of %d" % [GameState.round_index + 1, GameState.ROUNDS.size()], 20, UIKit.TEXT)
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(info)
 	var sc := UIKit.label("FINAL SCORE  " + Hud._fmt(GameState.score), 38, UIKit.GOLD, UIKit.title_font())
