@@ -66,7 +66,7 @@ const WEATHER_PHRASES := {
 	Weather.SNOW: [
 		"freezing. Snow is falling.",
 		"bitter. Heavy snow is muffling every sound.",
-		"icy. Snow flurries - visibility will come and go.",
+		"icy. Blizzard squalls - visibility will come and go.",
 		"arctic. The city is blanketed in snow.",
 		"cold. Snow squalls blowing through the streets.",
 	],

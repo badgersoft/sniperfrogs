@@ -36,7 +36,7 @@ The game ships with **no asset files**. All graphics are drawn at runtime with `
 - Each level lasts 90 s and gives you 15 bullets. You start the campaign on 100% health and it **carries over between levels**. After every level won, a field medic adds a random 0–25% (capped at 100%). Scores are in dollars: a bunny kill is worth a **$10,000** bounty, and hitting a civilian costs **$1,000–$5,000**.
 - Bunnies fire every 8–16 s at low training. Each training grade shortens that gap by a further 15% (medium 6.8–13.6 s, expert 5.6–11.2 s), and the final level shortens it again (4.2–8.4 s). You'll see a muzzle flash at their window and hear a muffled, positional shot, and an orange glow marks the screen edge when the shooter is off-screen. Their chance of missing depends on training: low 3/4, medium 2/4, expert 1/4. Each hit costs about 25% health.
 - In storms, a bunny may time its shot with the lightning, which hides the flash and drowns out the report.
-- In snow (levels 8 and 12, plus level 2 for now while testing) every gunshot is muffled, and snow flurries every so often blur the whole view, scope included.
+- In snow (levels 8 and 12, plus level 2 for now while testing) only the gunshots are muffled (everything else sounds normal), and every so often a blizzard squall blows across the screen, briefly hiding the street and the scope.
 - Each briefing describes the weather with a randomly chosen phrase, so levels read differently.
 - Each briefing opens with a coded "...Level x clearance granted." message that decrypts on screen.
 - Clear every sniper to win the level. Each second left on the clock then adds **$500**, counted up on the results screen.

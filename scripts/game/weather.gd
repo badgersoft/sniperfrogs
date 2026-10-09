@@ -1,6 +1,6 @@
 extends Node2D
 ## Screen-space weather: rain streaks, lightning bolts and the white flash,
-## or falling snow with occasional flurries (which drive the screen blur).
+## or falling snow with occasional blizzard squalls (drawn by squall.gd).
 ## Lives on its own CanvasLayer above the world and below the scope/HUD.
 
 const L := preload("res://scripts/game/layout.gd")
@@ -9,11 +9,12 @@ signal lightning_flashed
 
 var storm := false
 var snow := false
-var blur := 0.0               # 0..1, read by the game for the snow blur
+## Blizzard squall progress: -1 when calm, otherwise 0..1 as the squall
+## sweeps across the screen from right to left (read by squall.gd).
+var squall := -1.0
 var _flakes: Array[Vector4] = []   # x, y, fall speed, size
-var _flurry_t := -1.0         # >= 0 while a flurry is blowing
-var _next_flurry := 10.0
-const FLURRY_TIME := 4.5
+var _next_squall := 10.0
+const SQUALL_TIME := 6.0
 var view_size := Vector2(1280, 720)
 var flash := 0.0              # 0..1, read by the game to brighten the world
 var _drops: Array[Vector3] = []
@@ -28,7 +29,7 @@ func setup(is_storm: bool, is_snow := false) -> void:
 	snow = is_snow
 	_rng.randomize()
 	_next_strike = _rng.randf_range(4.0, 9.0)
-	_next_flurry = _rng.randf_range(8.0, 14.0)
+	_next_squall = _rng.randf_range(10.0, 16.0)
 	if snow:
 		for i in 240:
 			_flakes.append(Vector4(_rng.randf() * 1700.0, _rng.randf() * L.PLAY_H,
@@ -81,19 +82,18 @@ func strike(thunder_delay := -1.0) -> void:
 
 func _process_snow(delta: float) -> void:
 	view_size = get_viewport().get_visible_rect().size
-	# Flurries: a gust ramps up, blurs the view for a few seconds, then eases.
+	# Blizzard squalls: every so often a wall of snow blows across the street.
 	var gust := 0.0
-	if _flurry_t >= 0.0:
-		_flurry_t += delta
-		gust = sin(PI * clampf(_flurry_t / FLURRY_TIME, 0.0, 1.0))
-		if _flurry_t >= FLURRY_TIME:
-			_flurry_t = -1.0
-			_next_flurry = _rng.randf_range(12.0, 22.0)
+	if squall >= 0.0:
+		squall += delta / SQUALL_TIME
+		gust = sin(PI * clampf(squall, 0.0, 1.0))
+		if squall >= 1.0:
+			squall = -1.0
+			_next_squall = _rng.randf_range(14.0, 24.0)
 	else:
-		_next_flurry -= delta
-		if _next_flurry <= 0.0:
-			_flurry_t = 0.0
-	blur = gust * 0.75
+		_next_squall -= delta
+		if _next_squall <= 0.0:
+			squall = 0.0
 	var t := Time.get_ticks_msec() / 1000.0
 	for i in _flakes.size():
 		var f := _flakes[i]

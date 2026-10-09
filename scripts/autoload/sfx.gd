@@ -5,7 +5,9 @@ extends Node
 
 const RATE := 22050
 const POOL_SIZE := 14
-const WORLD_BUS := "World"
+## Gunshots play through their own bus so snow can muffle just them.
+const GUNSHOT_BUS := "Gunshots"
+const GUNSHOTS := ["rifle", "bunny_shot"]
 
 var _streams := {}
 var _pool: Array[AudioStreamPlayer] = []
@@ -22,7 +24,6 @@ func _ready() -> void:
 	_make_world_bus()
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer.new()
-		p.bus = WORLD_BUS
 		add_child(p)
 		_pool.append(p)
 	_rain_player = AudioStreamPlayer.new()
@@ -32,7 +33,6 @@ func _ready() -> void:
 		p2.max_distance = 5000.0
 		p2.attenuation = 0.6
 		p2.panning_strength = 1.6
-		p2.bus = WORLD_BUS
 		add_child(p2)
 		_pool_2d.append(p2)
 	_build_all()
@@ -45,6 +45,7 @@ func play(sound: String, volume_db := 0.0, pitch := 1.0) -> AudioStreamPlayer:
 	var p := _pool[_next]
 	_next = (_next + 1) % POOL_SIZE
 	p.stream = _streams[sound]
+	p.bus = _bus_for(sound)
 	p.volume_db = volume_db
 	p.pitch_scale = pitch
 	p.play()
@@ -60,18 +61,24 @@ func play_at(sound: String, world_pos: Vector2, volume_db := 0.0, pitch := 1.0) 
 	_next_2d = (_next_2d + 1) % _pool_2d.size()
 	p.global_position = world_pos
 	p.stream = _streams[sound]
+	p.bus = _bus_for(sound)
 	p.volume_db = volume_db
 	p.pitch_scale = pitch
 	p.play()
+
+
+func _bus_for(sound: String) -> StringName:
+	return GUNSHOT_BUS if sound in GUNSHOTS else &"Master"
 
 
 func play_varied(sound: String, volume_db := 0.0, spread := 0.06) -> AudioStreamPlayer:
 	return play(sound, volume_db, 1.0 + _rng.randf_range(-spread, spread))
 
 
-## Snow deadens sound: a low-pass on the World bus muffles every shot.
+## Snow deadens sound: a low-pass on the Gunshots bus muffles every shot
+## (yours and the bunnies'), leaving everything else untouched.
 func set_muffled(on: bool) -> void:
-	var bus := AudioServer.get_bus_index(WORLD_BUS)
+	var bus := AudioServer.get_bus_index(GUNSHOT_BUS)
 	if bus < 0:
 		return
 	AudioServer.set_bus_effect_enabled(bus, 0, on)
@@ -85,11 +92,11 @@ func start_wind(volume_db := -10.0) -> void:
 
 
 func _make_world_bus() -> void:
-	if AudioServer.get_bus_index(WORLD_BUS) >= 0:
+	if AudioServer.get_bus_index(GUNSHOT_BUS) >= 0:
 		return
 	AudioServer.add_bus()
 	var idx := AudioServer.bus_count - 1
-	AudioServer.set_bus_name(idx, WORLD_BUS)
+	AudioServer.set_bus_name(idx, GUNSHOT_BUS)
 	AudioServer.set_bus_send(idx, "Master")
 	var lp := AudioEffectLowPassFilter.new()
 	lp.cutoff_hz = 750.0

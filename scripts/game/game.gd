@@ -16,7 +16,7 @@ const Weather := preload("res://scripts/game/weather.gd")
 const Scope := preload("res://scripts/game/scope.gd")
 const Hud := preload("res://scripts/game/hud.gd")
 const Overlay := preload("res://scripts/game/overlay.gd")
-const BlurShader := preload("res://shaders/snow_blur.gdshader")
+const Squall := preload("res://scripts/game/squall.gd")
 
 enum State { INTRO, STARTING, PLAYING, WON, LIMO, DEAD, DONE }
 
@@ -59,7 +59,6 @@ var _weather: Node2D
 var _scope: Node2D
 var _hud: Control
 var _overlay: Control
-var _blur: ColorRect
 
 var _view_w := 1280.0
 var _aim := Vector2(640, 300)
@@ -128,17 +127,14 @@ func _ready() -> void:
 	_scope.visible = false
 
 	if snow:
-		# Snow flurries blur the view (scope included) every so often.
-		var bl := CanvasLayer.new()
-		bl.layer = 15
-		add_child(bl)
-		_blur = ColorRect.new()
-		_blur.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var mat := ShaderMaterial.new()
-		mat.shader = BlurShader
-		_blur.material = mat
-		_blur.visible = false
-		bl.add_child(_blur)
+		# Blizzard squalls sweep across above everything bar the HUD, so they
+		# hide the scope too.
+		var ql := CanvasLayer.new()
+		ql.layer = 15
+		add_child(ql)
+		var squall := Squall.new()
+		squall.weather = _weather
+		ql.add_child(squall)
 
 	var hl := CanvasLayer.new()
 	hl.layer = 20
@@ -287,12 +283,6 @@ func _process(delta: float) -> void:
 	_handle_scrolling(delta)
 	_update_camera(delta)
 	_modulate.color = _base_modulate.lerp(Color(1.25, 1.25, 1.35), _weather.flash * 0.6)
-	if _blur:
-		var amt: float = _weather.blur
-		_blur.visible = amt > 0.01
-		if _blur.visible:
-			_blur.size = Vector2(_view_w, L.PLAY_H)
-			(_blur.material as ShaderMaterial).set_shader_parameter("amount", amt)
 
 	match state:
 		State.INTRO:
