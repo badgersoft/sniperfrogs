@@ -54,7 +54,12 @@ func _ready() -> void:
 	var kills := int(r.get("kills", 0))
 	_row(grid, "Snipers eliminated  (%d x $10,000)" % kills, "+" + Hud._fmt(int(r.get("kill_points", 0))), UIKit.GREEN)
 	var civ := int(r.get("civilians", 0))
-	_row(grid, "Civilian casualties  (%d)" % civ, ("-" + Hud._fmt(int(r.get("penalty", 0)))) if civ > 0 else "0", UIKit.RED if civ > 0 else UIKit.TEXT)
+	var decoys := int(r.get("decoys", 0))
+	var decoy_pen := decoys * GameState.DECOY_PENALTY
+	var civ_pen := int(r.get("penalty", 0)) - decoy_pen
+	_row(grid, "Civilian casualties  (%d)" % civ, ("-" + Hud._fmt(civ_pen)) if civ > 0 else "0", UIKit.RED if civ > 0 else UIKit.TEXT)
+	if decoys > 0:
+		_row(grid, "Decoys shot  (%d x $7,500)" % decoys, "-" + Hud._fmt(decoy_pen), UIKit.RED)
 	var boost := int(r.get("health_boost", 0))
 	_row(grid, "Health carried forward", "%d%%" % int(r.get("health", 100)), UIKit.TEXT)
 	if not GameState.is_last_round():

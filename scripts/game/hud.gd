@@ -56,18 +56,18 @@ func _draw() -> void:
 	draw_string(title, Vector2(16, y0 + 22), "AMMO  %d/%d" % [game.bullets, GameState.BULLETS_PER_ROUND],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, label_c)
 	for i in GameState.BULLETS_PER_ROUND:
-		_draw_cartridge(Vector2(18 + i * 13, y0 + 30), i < game.bullets)
+		_draw_cartridge(Vector2(18 + i * 18, y0 + 30), i < game.bullets)
 
 	# --- Health
-	var hx := maxf(232.0, w * 0.21)
+	var hx := maxf(150.0, w * 0.14)
 	draw_string(title, Vector2(hx + 40, y0 + 22), "HEALTH", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, label_c)
-	UIKit.draw_frog_head(self, Vector2(hx + 16, y0 + 44), 14, false)
 	var bar := Rect2(hx + 40, y0 + 30, minf(190.0, w * 0.15), 22)
 	draw_rect(bar.grow(2), Color(0, 0, 0, 0.6))
 	var hp := clampf(game.health / 100.0, 0.0, 1.0)
 	var hc := Color("#e53935").lerp(Color("#fdd835"), clampf(hp * 2.0, 0, 1)).lerp(Color("#66bb6a"), clampf(hp * 2.0 - 1.0, 0, 1))
 	if hp <= 0.25 and fmod(_t, 0.6) < 0.3:
 		hc = hc.lightened(0.4)
+	_draw_shield(Vector2(hx + 16, y0 + 43), 15.0, hc)
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp, bar.size.y)), hc)
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp, 6)), Color(1, 1, 1, 0.25))
 	for k in range(1, 4):
@@ -157,6 +157,31 @@ func _pill_box() -> StyleBoxFlat:
 		_pill.set_border_width_all(1)
 		_pill.set_corner_radius_all(15)
 	return _pill
+
+
+## Heater-shield health icon; its centre takes the health bar's colour.
+func _draw_shield(c: Vector2, r: float, fill: Color) -> void:
+	var pts := PackedVector2Array()
+	pts.append(c + Vector2(-r, -r))
+	pts.append(c + Vector2(r, -r))
+	for i in range(0, 9):
+		var t := float(i) / 8.0
+		pts.append(c + Vector2(r * (1.0 - t * t), -r + t * r * 2.25 - (t * t) * r * 0.05))
+	for i in range(8, -1, -1):
+		var t := float(i) / 8.0
+		pts.append(c + Vector2(-r * (1.0 - t * t), -r + t * r * 2.25 - (t * t) * r * 0.05))
+	var inner := PackedVector2Array()
+	for p in pts:
+		inner.append(c + (p - c) * 0.72 + Vector2(0, -r * 0.06))
+	draw_colored_polygon(pts, Color("#b0bec5"))
+	var rim := pts.duplicate()
+	rim.append(pts[0])
+	draw_polyline(rim, Color("#37474f"), 2.0, true)
+	draw_colored_polygon(inner, fill.darkened(0.1))
+	# Cross emblem and a glint on the steel.
+	draw_line(c + Vector2(0, -r * 0.62), c + Vector2(0, r * 0.75), Color(1, 1, 1, 0.75), 2.0)
+	draw_line(c + Vector2(-r * 0.5, -r * 0.1), c + Vector2(r * 0.5, -r * 0.1), Color(1, 1, 1, 0.75), 2.0)
+	draw_line(c + Vector2(-r * 0.78, -r * 0.82), c + Vector2(-r * 0.2, -r * 0.82), Color(1, 1, 1, 0.6), 1.5)
 
 
 func _draw_cartridge(p: Vector2, live: bool) -> void:

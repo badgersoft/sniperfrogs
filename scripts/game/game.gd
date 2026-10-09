@@ -42,6 +42,7 @@ var cam_left := 0.0
 var touch_mode := false
 var fire_button_glow := 0.0
 var bunnies: Array = []
+var decoys: Array = []
 
 var _cfg: Dictionary
 var _rng := RandomNumberGenerator.new()
@@ -73,6 +74,7 @@ var _end_t := 0.0
 var _civilians_hit := 0
 var _penalty_total := 0
 var _kill_points := 0
+var _decoys_hit := 0
 
 var _limo: Node2D
 var _limo_phase := 0
@@ -266,6 +268,20 @@ func _place_bunnies() -> void:
 		bunny.shot_timer = _rng.randf_range(iv.x * 0.6, iv.y * 0.75) + i * 1.8
 		_bunny_root.add_child(bunny)
 		bunnies.append(bunny)
+	# Plywood decoys in other windows - chance and count rise with the level.
+	for i in GameState.roll_decoys():
+		var b: Node2D = order[_rng.randi() % order.size()]
+		var idx: int = _rng.randi() % b.window_count()
+		while used.has([b.get_instance_id(), idx]):
+			b = order[_rng.randi() % order.size()]
+			idx = _rng.randi() % b.window_count()
+		used[[b.get_instance_id(), idx]] = true
+		var d := Bunny.new()
+		d.setup(b, idx, _cfg.training, _rng)
+		d.decoy = true
+		d.snow = snow
+		_bunny_root.add_child(d)
+		decoys.append(d)
 
 
 func _shuffle(a: Array) -> void:
@@ -390,6 +406,10 @@ func _fire() -> void:
 		if b.alive and b.world_rect().grow(3.0).has_point(wp):
 			_kill_bunny(b)
 			return
+	for d in decoys:
+		if d.alive and d.world_rect().grow(3.0).has_point(wp):
+			_hit_decoy(d)
+			return
 	# Front-most pedestrians (largest y) first.
 	var peds := _peds_root.get_children()
 	peds.sort_custom(func(a, b): return a.position.y > b.position.y)
@@ -437,6 +457,22 @@ func _kill_bunny(b: Node2D) -> void:
 	else:
 		var left := snipers_total - snipers_killed
 		_overlay.banner("SNIPER DOWN  ·  %d LEFT" % left, UIKit.GREEN, 1.2, 34)
+
+
+func _hit_decoy(d: Node2D) -> void:
+	d.alive = false
+	d.visible = false
+	d.building.break_window(d.window_index, false)
+	var c: Vector2 = d.world_rect().get_center()
+	_fx.splinters(c, 26)
+	_fx.glass(c, 14)
+	_fx.popup(c - Vector2(0, 26), "-" + Hud._fmt(GameState.DECOY_PENALTY), UIKit.RED, 24)
+	Sfx.play("glass", -4.0)
+	Sfx.play_varied("wood", -2.0, 0.08)
+	_decoys_hit += 1
+	_penalty_total += GameState.DECOY_PENALTY
+	GameState.add_score(-GameState.DECOY_PENALTY)
+	_overlay.banner("YOU SHOT A DECOY - BAD LUCK", UIKit.RED, 1.6, 40)
 
 
 func _kill_pedestrian(p: Node2D) -> void:
@@ -614,6 +650,7 @@ func _finish_round_won() -> void:
 		"kill_points": _kill_points,
 		"civilians": _civilians_hit,
 		"penalty": _penalty_total,
+		"decoys": _decoys_hit,
 		"time_left": int(ceil(time_left)),
 		"bullets_left": bullets,
 		"health": int(health),

@@ -11,7 +11,8 @@ const SYNOPSIS := "The year is 2027 and the Bunnies are back.\n\nThe Sniper Frog
 const HOW_TO := [
 	["Find them", "Bunny snipers hide behind ordinary-looking windows. They only show up through your scope - sweep it across the buildings to spot them."],
 	["Watch for flashes", "When a bunny takes a shot there's a muzzle flash at their window. In storms, thunder and lightning can hide it; in snow every gunshot is muffled and blizzard squalls can blot out your view."],
-	["Take the shot", "15 bullets, 90 seconds. Each bunny is worth a $10,000 bounty. Hitting a civilian costs you $1,000 - $5,000."],
+	["Take the shot", "6 bullets, 90 seconds. Each bunny is worth a $10,000 bounty. Hitting a civilian costs you $1,000 - $5,000."],
+	["Beware of decoys", "From level 2 McWhurter's crew may prop wooden decoys in other windows. They look like a bunny through the scope but are flat painted plywood on a stake - shooting one wastes a bullet and costs you $7,500."],
 	["Stay alive", "Bunnies shoot back. Each hit costs around 25% health, and your health carries over from level to level. After every level a field medic patches you up by up to 25% (never above 100%). Better-trained bunnies miss less often."],
 	["Save the President", "If time runs out, the presidential limousine arrives... and you've failed. Clear the level early for $500 per second left. Survive all 13 levels to win."],
 ]

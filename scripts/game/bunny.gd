@@ -1,7 +1,8 @@
 extends Node2D
-## A Bunny sniper hiding behind a window. This node lives on the scope-only
-## visibility layer, so it is invisible in the main view and appears only
-## through the magnifying scope. Origin = top-left of the window.
+## A Bunny sniper hiding behind a window - or, with `decoy` set, a painted
+## plywood decoy that never shoots. Lives on the scope-only visibility
+## layer, so it is invisible in the main view and appears only through the
+## magnifying scope. Origin = top-left of the window.
 
 const L := preload("res://scripts/game/layout.gd")
 const Building := preload("res://scripts/game/building.gd")
@@ -17,6 +18,7 @@ var aiming := false
 var flash := 0.0
 var fur := Color.GRAY
 var snow := false
+var decoy := false
 var _t := 0.0
 
 
@@ -50,6 +52,12 @@ func _draw() -> void:
 	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(w, 0), Vector2(w, h), Vector2(0, h)]),
 		PackedColorArray([top, top, bot, bot]))
 	draw_rect(Rect2(3, 4, 7, 9), Color(0.35, 0.3, 0.4, 0.5))   # picture on back wall
+	if decoy:
+		_draw_decoy(w, h)
+		Building.draw_window_frame(self, r)
+		if snow:
+			Building.draw_window_snow(self, r)
+		return
 	var bob := sin(_t * 2.2) * 0.6
 	var hc := Vector2(14, 18 + bob)
 	var inner := Color("#f2a7b4")
@@ -91,6 +99,46 @@ func _draw() -> void:
 	Building.draw_window_frame(self, r)
 	if snow:
 		Building.draw_window_snow(self, r)
+
+
+## Flat plywood cut-out of a bunny sniper: flat paint, wood grain, nail
+## heads, a crude painted face, a broom-handle "rifle" and a support stake.
+func _draw_decoy(w: float, h: float) -> void:
+	var wood := Color("#c9a46a")
+	var edge := Color("#7a5530")
+	var grain := Color(0.48, 0.32, 0.16, 0.45)
+	var hc := Vector2(14, 17)
+	var clip := PackedVector2Array([Vector2.ZERO, Vector2(w, 0), Vector2(w, h), Vector2(0, h)])
+	# Support stake behind the board.
+	draw_rect(Rect2(12.5, 22, 3, 12), Color("#8b6a42"))
+	# One flat silhouette: stiff upright ears, round head, square shoulders.
+	var shape := PackedVector2Array([
+		Vector2(7, 32), Vector2(7, 26), Vector2(9, 23.5), Vector2(8.5, 20), Vector2(8, 16),
+		Vector2(9.5, 12), Vector2(9.2, 3), Vector2(10.6, 0.8), Vector2(12, 3), Vector2(12.2, 10.5),
+		Vector2(15.8, 10.5), Vector2(16, 3), Vector2(17.4, 0.8), Vector2(18.8, 3), Vector2(18.5, 12),
+		Vector2(20, 16), Vector2(19.5, 20), Vector2(19, 23.5), Vector2(21, 26), Vector2(21, 32)])
+	for poly in Geometry2D.intersect_polygons(shape, clip):
+		draw_colored_polygon(poly, wood)
+	var outline := shape.duplicate()
+	outline.append(shape[0])
+	draw_polyline(outline, edge, 1.0, true)
+	# Wood grain.
+	for k in 6:
+		var y := 4.0 + k * 4.6
+		draw_line(Vector2(8.5, y), Vector2(19.5, y + 0.8), grain, 0.6)
+	# Crudely painted face: flat black shades, dot nose, painted teeth.
+	draw_rect(Rect2(hc + Vector2(-5.5, -1.8), Vector2(11, 2.6)), Color("#1b1b1b"))
+	draw_circle(hc + Vector2(0, 2.2), 0.9, Color("#c0392b"))
+	draw_rect(Rect2(hc + Vector2(-1, 3.6), Vector2(2, 1.6)), Color("#f2efe6"))
+	draw_arc(hc + Vector2(0, 3.0), 2.6, 0.4, PI - 0.4, 8, Color("#1b1b1b"), 0.6)
+	# Nail heads and a tell-tale price tag.
+	for n in [Vector2(10.6, 4.5), Vector2(17.4, 4.5), Vector2(9.5, 27.5), Vector2(18.5, 27.5)]:
+		draw_circle(n, 0.7, Color("#9aa0a6"))
+	draw_rect(Rect2(19.5, 27, 5, 3.2), Color("#f5f0d8"))
+	draw_line(Vector2(19.5, 28.6), Vector2(17, 27.6), Color("#f5f0d8"), 0.4)
+	# Broom-handle "rifle" nailed across the chest.
+	draw_line(Vector2(5, 30), Vector2(25, 21), Color("#a07a4a"), 2.0)
+	draw_line(Vector2(5, 30), Vector2(25, 21), Color(1, 1, 1, 0.15), 0.6)
 
 
 func _draw_rifle(hc: Vector2) -> void:

@@ -51,6 +51,19 @@ func sparks(pos: Vector2, amount := 10) -> void:
 	dust(pos, 5)
 
 
+## Wood chips and sawdust for a shattered plywood decoy.
+func splinters(pos: Vector2, amount := 24) -> void:
+	for i in amount:
+		var a := _rng.randf_range(-PI, 0.2)
+		var col := Color("#c9a46a").lerp(Color("#7a5530"), _rng.randf())
+		_spawn(P.DEBRIS, pos + Vector2(_rng.randf_range(-6, 6), _rng.randf_range(-8, 8)),
+			Vector2(cos(a), sin(a)) * _rng.randf_range(40, 180), _rng.randf_range(0.6, 1.2),
+			_rng.randf_range(1.5, 3.5), col, 480.0)
+	for i in 10:
+		_spawn(P.DUST, pos, Vector2(_rng.randf_range(-30, 30), _rng.randf_range(-30, 0)), _rng.randf_range(0.5, 1.0),
+			_rng.randf_range(2, 4), Color(0.85, 0.72, 0.5, 0.8), -10.0)
+
+
 func dust(pos: Vector2, amount := 8) -> void:
 	for i in amount:
 		_spawn(P.DUST, pos, Vector2(_rng.randf_range(-30, 30), _rng.randf_range(-40, -5)), _rng.randf_range(0.4, 0.9),

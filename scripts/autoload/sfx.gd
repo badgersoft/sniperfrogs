@@ -147,6 +147,7 @@ func _build_all() -> void:
 	_streams["scream"] = _make(_synth_scream())
 	_streams["whiz"] = _make(_synth_whiz())
 	_streams["ping"] = _make(_synth_ping())
+	_streams["wood"] = _make(_synth_wood())
 
 
 func _make(samples: PackedFloat32Array, loop := false) -> AudioStreamWAV:
@@ -525,4 +526,17 @@ func _synth_wind() -> PackedFloat32Array:
 		var j := b.size() - fade + i
 		b[i] = b[i] * w + b[j] * (1.0 - w)
 	b.resize(b.size() - fade)
+	return b
+
+
+func _synth_wood() -> PackedFloat32Array:
+	# Hollow plywood "thock" with a splintering crackle.
+	var b := _buf(0.5)
+	for i in b.size():
+		var t := float(i) / RATE
+		var knock := sin(TAU * 210.0 * t) * exp(-t / 0.05) + 0.6 * sin(TAU * 470.0 * t) * exp(-t / 0.03)
+		b[i] = knock * 0.9
+	_add_crack(b, 0.0, 0.5, 0.012)
+	for k in 14:
+		_add_click(b, _rng.randf_range(0.01, 0.25), _rng.randf_range(0.05, 0.2), _rng.randf_range(900.0, 2200.0))
 	return b

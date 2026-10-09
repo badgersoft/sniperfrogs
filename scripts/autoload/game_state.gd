@@ -13,13 +13,27 @@ const SCOPE_TOUCH_MULTIPLIER := 1.6
 const SCOPE_MAGNIFICATION := 1.8
 
 const ROUND_TIME := 90.0
-const BULLETS_PER_ROUND := 15
+const BULLETS_PER_ROUND := 6
 const START_HEALTH := 100
 const HIT_DAMAGE := [20, 25, 25, 30]          # "around 25%" per hit
 const POINTS_PER_BUNNY := 10000
 const CIVILIAN_PENALTY_MIN := 1000
 const CIVILIAN_PENALTY_MAX := 5000
 const TIME_BONUS_PER_SECOND := 500
+const DECOY_PENALTY := 7500
+
+## Chance of [no decoy, one decoy, two decoys] by level (index 0 = level 1).
+## Levels past the end of the table use its last row.
+const DECOY_ODDS := [
+	[1.0, 0.0, 0.0],      # 1
+	[0.75, 0.25, 0.0],    # 2
+	[0.5, 0.5, 0.0],      # 3
+	[0.25, 0.75, 0.0],    # 4
+	[0.05, 0.65, 0.30],   # 5
+	[0.05, 0.65, 0.30],   # 6
+	[0.05, 0.65, 0.30],   # 7
+	[0.03, 0.27, 0.70],   # 8 onwards: two decoys most likely
+]
 ## Base gap (seconds) between a bunny's shots, before the scaling below.
 const BUNNY_SHOT_INTERVAL := Vector2(10.0, 20.0)
 ## Global tightening of that gap (20% shorter).
@@ -139,6 +153,17 @@ func is_last_round() -> bool:
 
 
 ## Min/max seconds between one bunny's shots on the current level.
+## Rolls how many decoys to hide on the current level.
+func roll_decoys() -> int:
+	var odds: Array = DECOY_ODDS[mini(round_index, DECOY_ODDS.size() - 1)]
+	var r := randf()
+	if r < odds[0]:
+		return 0
+	if r < odds[0] + odds[1]:
+		return 1
+	return 2
+
+
 func shot_interval() -> Vector2:
 	var cfg := current_round()
 	return BUNNY_SHOT_INTERVAL * SHOT_INTERVAL_SCALE * float(TRAINING_SHOT_SCALE[cfg.training]) \
